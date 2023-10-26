@@ -24,9 +24,6 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
-dds::domain::DomainParticipant ddscam_participant(66);
-dds::domain::DomainParticipant paas_participant(66);
-std::map<UserDevice, UserTask> taskmanager;
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
@@ -136,13 +133,13 @@ int main(int argc, char *argv[])
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
 
-
   while (true)
   {
     UserDevice userdevice;
-    UserTask task;
+    UserTask usertask;
     // 收到client request
     beast::flat_buffer buffer;
+    std::cout << " ++++++++++listening on " << ip_address << ":" << port << std::endl;
     ws.read(buffer);
     std::string received = beast::buffers_to_string(buffer.data());
     std::cout << "Received: " << received << std::endl;
@@ -153,31 +150,38 @@ int main(int argc, char *argv[])
     userdevice.partition_device = json_obj["partition_device"].get<std::string>();
 
     // 設定value
-    task.token = json_obj["token"].get<std::string>();
-    task.username = json_obj["username"].get<std::string>();
-    task.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
-    task.partition_device = json_obj["partition_device"].get<std::string>();
-    task.query_type = json_obj["query_type"].get<std::int8_t>();
-    task.starttime = json_obj["starttime"].get<std::int64_t>();
-    task.endtime = json_obj["endtime"].get<std::int64_t>();
-    task.path = json_obj["path"].get<std::string>();
-    task.resolution = json_obj["resolution"].get<std::string>();
-    task.activate = json_obj["activate"].get<bool>();
-    task.threadcontroll = true;
+    usertask.token = json_obj["token"].get<std::string>();
+    usertask.username = json_obj["username"].get<std::string>();
+    usertask.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
+    usertask.partition_device = json_obj["partition_device"].get<std::string>();
+    usertask.query_type = json_obj["query_type"].get<std::int8_t>();
+    usertask.starttime = json_obj["starttime"].get<std::int64_t>();
+    usertask.endtime = json_obj["endtime"].get<std::int64_t>();
+    usertask.path = json_obj["path"].get<std::string>();
+    usertask.resolution = json_obj["resolution"].get<std::string>();
+    usertask.activate = json_obj["activate"].get<bool>();
+    usertask.threadcontroll = true;
 
-    // taskmanager[userdevice] = task;
-    resortmap(userdevice, task, std::ref(taskmanager));
+    // for (auto it = taskmanager.begin(); it != taskmanager.end();)
+    // {
+    //   if (it->first.partition_device == userdevice.partition_device)
+    //     it->second.threadcontroll = false;
+    //   else
+    //     ++it;
+    // }
+    taskmanager[userdevice] = usertask;
+    // resortmap(userdevice, task, std::ref(taskmanager));
 
-    if (!task.path.empty())
+    if (!usertask.path.empty())
     {
       sub_thread instance;
       std::string outputurl;
-      outputurl = instance.sub_thread_task(std::ref(taskmanager),
-                                           userdevice,
-                                           std::ref(ddscam_participant),
-                                           std::ref(paas_participant));
+      outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]));
       ws.write(net::buffer(outputurl));
+      std::cout << "start thread finished !!!!!!!!!!!!" << std::endl;
     }
+    sleep(20);
+    taskmanager[userdevice].threadcontroll = false;
   }
   ws.close(websocket::close_code::normal);
   // while (true)

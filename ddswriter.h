@@ -7,6 +7,7 @@
 #include <vector>
 #include <rti/rti.hpp>
 #include "sub_thread.h"
+#include "commonstruct.h"
 
 class DDSWriter {
     private:
@@ -27,8 +28,7 @@ class DDSWriter {
                         bool query_type,
                         const std::int64_t & starttime,
                         const std::int64_t & endtime,
-                        uint8_t activate,
-                        dds::domain::DomainParticipant & paas_participant);
+                        uint8_t activate);
         Result splitString(const std::string& input);
 };
 

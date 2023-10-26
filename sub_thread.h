@@ -27,10 +27,7 @@ public:
     sub_thread();
     ~sub_thread();
 
-    std::string sub_thread_task(std::map<UserDevice, UserTask> &taskmanager,
-                                const UserDevice userdevice,
-                                dds::domain::DomainParticipant &ddscam_participant,
-                                dds::domain::DomainParticipant &paas_participant);
+    std::string sub_thread_task(UserTask & usertask);
     pqxx::result searchdatabase(const std::string & tablename,
                                 const std::string & source,
                                 const std::int64_t & starttime,

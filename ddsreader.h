@@ -24,16 +24,10 @@ class DDSReader {
         DDSReader();
         ~DDSReader();
         // DDSReader(sub_thread& sub_thread) : sub_thread_(sub_thread) {};
-        void videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
-                                UserDevice userdevice,
-                                bool & threadcontroll,
-                                dds::domain::DomainParticipant & ddscam_participant,
+        void videostream_reader(UserTask &usertask,
                                 std::string filepath);
 
-        void playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
-                            UserDevice userdevice,
-                            bool & threadcontroll,
-                            dds::domain::DomainParticipant & paas_participant,
+        void playh264_reader(UserTask &usertask,
                             std::string filepath);
 
 

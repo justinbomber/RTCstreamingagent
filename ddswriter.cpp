@@ -56,8 +56,7 @@ void DDSWriter::query_writer(const std::string & username,
                             bool query_type,
                             const std::int64_t & starttime,
                             const std::int64_t & endtime,
-                            uint8_t activate,
-                            dds::domain::DomainParticipant & paas_participant)
+                            uint8_t activate)
 // TODO: partition_device need to seperate to source(uuid) and x y location.
 {
     // Create a QosProvider (or use the default one)

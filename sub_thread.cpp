@@ -2,6 +2,7 @@
 #include <iostream>
 #include "ddsreader.h"
 #include "ddswriter.h"
+#include "commonstruct.h"
 
 using namespace std;
 
@@ -11,59 +12,6 @@ sub_thread::sub_thread()
 
 sub_thread::~sub_thread()
 {
-}
-
-void appendToM3U8File(std::string m3u8name, const std::string &directory, const std::string &newString)
-{
-    std::string filename = directory + m3u8name + ".m3u8";
-
-    // 打開已存在的文件用於追加
-    std::ofstream outFile(filename, std::ios::app);
-
-    // 檢查文件是否成功打開
-    if (!outFile)
-    {
-        std::cerr << "無法打開文件" << std::endl;
-        return;
-    }
-    outFile << "#EXTINF:1.000000,\n";
-    outFile << newString;
-    outFile << "#EXT-X-DISCONTINUITY\n";
-
-    // 關閉文件
-    outFile.close();
-}
-
-void transferH264(const std::string &targetFolder, bool &threadcontroll, std::string m3u8name, const std::string &inputfolder)
-{
-    while (threadcontroll)
-    {
-        for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
-        {
-            if (entry.is_regular_file())
-            {
-                const std::string filename = entry.path().filename().string();
-                const std::string extension = entry.path().extension().string();
-
-                if (extension == ".h264")
-                {
-                    if (threadcontroll == false)
-                        break;
-                    const std::string filenameWithoutExt = entry.path().stem().string();
-                    std::string cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -c:v libx264 -c:a aac " +
-                                          targetFolder + filenameWithoutExt + ".ts && mv " +
-                                          targetFolder + filenameWithoutExt + ".ts " +
-                                          targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
-                    system(cmdline.c_str());
-                    std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
-                    appendToM3U8File(m3u8name, targetFolder, m3u8input);
-
-                    std::filesystem::remove(entry.path());
-                }
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
 }
 
 void createM3U8File(const std::string &directory, const std::string &m3u8name)
@@ -90,24 +38,114 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
     outFile.close();
 }
 
-std::string sub_thread::sub_thread_task(std::map<UserDevice, UserTask> &taskmanager,
-                                        const UserDevice userdevice,
-                                        dds::domain::DomainParticipant &ddscam_participant,
-                                        dds::domain::DomainParticipant &paas_participant)
+void appendToM3U8File(std::string m3u8name, const std::string &directory, const std::string &newString)
+{
+    std::string filename = directory + m3u8name + ".m3u8";
+
+    // 打開已存在的文件用於追加
+    std::ofstream outFile(filename, std::ios::app);
+
+    // 檢查文件是否成功打開
+    if (!outFile)
+    {
+        std::cerr << "無法打開文件" << std::endl;
+        return;
+    }
+    outFile << "#EXTINF:1.000000,\n";
+    outFile << newString;
+    outFile << "#EXT-X-DISCONTINUITY\n";
+
+    // 關閉文件
+    outFile.close();
+}
+
+
+void transferH264(const std::string &targetFolder, UserTask &usertask, std::string m3u8name, const std::string &inputfolder)
+{
+    DDSWriter ddswriter;
+    int traffic_status = 1;
+    int last_taraffic_status = 1;
+    while (usertask.threadcontroll)
+    {
+         
+        int file_count = 0;
+        for (const auto& entry : std::filesystem::directory_iterator(inputfolder))
+            if (entry.is_regular_file()) 
+                ++file_count;
+        if (file_count > 1)
+            traffic_status = 2;
+        else
+            traffic_status = 1;
+        if(traffic_status != last_taraffic_status)
+        {
+            if (traffic_status == 2)
+                ddswriter.query_writer(usertask.token, 
+                                        usertask.ai_type, 
+                                        usertask.partition_device, 
+                                        usertask.query_type, 
+                                        usertask.starttime, 
+                                        usertask.endtime, 
+                                        2);
+            else
+                ddswriter.query_writer(usertask.token, 
+                                        usertask.ai_type, 
+                                        usertask.partition_device, 
+                                        usertask.query_type, 
+                                        usertask.starttime, 
+                                        usertask.endtime, 
+                                        1);
+
+            last_taraffic_status = traffic_status;
+        }
+
+        for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
+        {
+            if (entry.is_regular_file())
+            {
+                const std::string extension = entry.path().extension().string();
+
+                if (extension == ".h264")
+                {
+                    if (!usertask.threadcontroll)
+                    {
+                        std::cout << "thread controll is false,!!!@@@###, "<< usertask.token << "transferh264 stop" << std::endl;
+                        return;
+                    }
+                    const std::string filenameWithoutExt = entry.path().stem().string();
+                    std::string cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -c:v libx264 -c:a aac " +
+                                          targetFolder + filenameWithoutExt + ".ts && mv " +
+                                          targetFolder + filenameWithoutExt + ".ts " +
+                                          targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
+                    system(cmdline.c_str());
+                    std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
+                    appendToM3U8File(m3u8name, targetFolder, m3u8input);
+
+                    std::filesystem::remove(entry.path());
+                }
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    std::cout << "thread controll is false,!!!@@@###, "<< usertask.token << "transferh264 stop" << std::endl;
+}
+
+
+
+std::string sub_thread::sub_thread_task(UserTask & usertask)
 {
 
-    std::string path = taskmanager[userdevice].path;
-    std::string username = taskmanager[userdevice].token;
-    std::string partition_device = taskmanager[userdevice].partition_device;
-    bool query_type = taskmanager[userdevice].query_type;
-    std::int64_t starttime = taskmanager[userdevice].starttime;
-    std::int64_t endtime = taskmanager[userdevice].endtime;
-    std::string resolution = taskmanager[userdevice].resolution;
-    std::vector<std::string> ai_type = taskmanager[userdevice].ai_type;
+    std::string path = usertask.path;
+    std::string username = usertask.token;
+    std::string partition_device = usertask.partition_device;
+    bool query_type = usertask.query_type;
+    std::int64_t starttime = usertask.starttime;
+    std::int64_t endtime = usertask.endtime;
+    std::string resolution = usertask.resolution;
+    std::vector<std::string> ai_type = usertask.ai_type;
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
-    std::string rootpath = "../../vue3-video-play/public/ramdisk/";
+    std::string rootpath = "../../work/paas/vue3-video-play/public/ramdisk";
     std::string catchinput = rootpath + "/catchinput/" + username + "/" + partition_device + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + username + "/" + partition_device + "/";
 
@@ -140,19 +178,13 @@ std::string sub_thread::sub_thread_task(std::map<UserDevice, UserTask> &taskmana
 
     createM3U8File(catchoutput, path);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
-                                      std::ref(taskmanager),
-                                      userdevice,
-                                      std::ref(taskmanager[userdevice].threadcontroll),
-                                      std::ref(ddscam_participant),
+                                      std::ref(usertask),
                                       catchinput);
 
     auto playh264_func = std::bind(&DDSReader::playh264_reader, &ddsreader,
-                                   std::ref(taskmanager),
-                                   userdevice,
-                                   std::ref(taskmanager[userdevice].threadcontroll),
-                                   std::ref(paas_participant),
+                                   std::ref(usertask),
                                    catchinput);
-    auto transfunc = std::bind(&transferH264, catchoutput, std::ref(taskmanager[userdevice].threadcontroll), path, catchinput);
+    auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     if (ai_type.size() == 0 && query_type)
     {
         // Read VideoStreaming
@@ -174,13 +206,13 @@ std::string sub_thread::sub_thread_task(std::map<UserDevice, UserTask> &taskmana
     else
     {
         // Write Tp_Query
-        ddswriter.query_writer(taskmanager[userdevice].token, 
-                                taskmanager[userdevice].ai_type, 
-                                taskmanager[userdevice].partition_device, 
-                                taskmanager[userdevice].query_type, 
-                                taskmanager[userdevice].starttime, 
-                                taskmanager[userdevice].endtime, 
-                                1, std::ref(paas_participant));
+        ddswriter.query_writer(usertask.token, 
+                                usertask.ai_type, 
+                                usertask.partition_device, 
+                                usertask.query_type, 
+                                usertask.starttime, 
+                                usertask.endtime, 
+                                1);
         if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
         {
             // Read playh264 topic;
@@ -221,7 +253,7 @@ std::string sub_thread::sub_thread_task(std::map<UserDevice, UserTask> &taskmana
 
     // 序列化 JSON 對象為字符串
     std::string json_str = json_obj.dump();
-    sleep(3);
+    // sleep(3);
     // return json_str;
     return json_str;
 }

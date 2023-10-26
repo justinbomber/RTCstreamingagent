@@ -21,19 +21,11 @@ void saveAsH264File(const std::vector<uint8_t>& data, int num, std::string filep
     outFile.close();
 }
 
-void DDSReader::videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
-                                   UserDevice userdevice,
-                                   bool & threadcontroll,
-                                   dds::domain::DomainParticipant & ddscam_participant,
+void DDSReader::videostream_reader(UserTask & usertask,
                                    std::string filepath)
 {
-    std::cout << "in reader-----------<<<<<<<<<<<<<" << std::endl;
-    std::string partition = taskmanager[userdevice].partition_device;
-    // Create a QosProvider (or use the default one)
-    dds::core::QosProvider qos_provider("./ddscamxml/ddscam_qos.xml");
-    // // Get the type called MyType
-    const dds::core::xtypes::DynamicType &mytypeVideoStream = qos_provider.extensions().type("DdsCam::VideoStream");
-    // Create Subscriber include partition of partitionDevice.
+    std::string partition = usertask.partition_device;
+
     dds::sub::Subscriber sub(ddscam_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos(); 
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
@@ -41,9 +33,8 @@ void DDSReader::videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
     partitionNames.push_back(partition);
     curPartition.name(partitionNames);
     sub.qos(subQos << curPartition);
-    dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream(ddscam_participant, "Tp_VideoStream", mytypeVideoStream);
 
-    std::string querycond = "source MATCH '" + taskmanager[userdevice].partition_device + "'";
+    std::string querycond = "source MATCH '" + usertask.partition_device + "'";
     // Create the DataReader
     dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicVideoStream);
     dds::sub::cond::QueryCondition cond(
@@ -56,8 +47,7 @@ void DDSReader::videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
     int count = -1;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
-    // Read the data sample
-    while (threadcontroll)
+    while (usertask.threadcontroll)
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
@@ -66,8 +56,10 @@ void DDSReader::videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
         {
             if (sample.info().valid())
             {
-                if (!threadcontroll)
+                if (!usertask.threadcontroll){
+                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
                     return;
+                }
                 VideoStream videoStream;
                 dds::core::xtypes::DynamicData& data = const_cast<dds::core::xtypes::DynamicData&>(sample.data());
                 videoStream.source_id = data.value<std::string>("source");
@@ -99,22 +91,22 @@ void DDSReader::videostream_reader(std::map<UserDevice, UserTask> &taskmanager,
                 } else {
                     bodyframebuf.insert(bodyframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
                 }
+                if (count == 50) {
+                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
+                    return;
+                }
             }
         }
     }
+    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
 }
 
-void DDSReader::playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
-                                UserDevice userdevice,
-                                bool & threadcontroll,
-                                dds::domain::DomainParticipant & paas_participant,
+void DDSReader::playh264_reader(UserTask &usertask,
                                 std::string filepath)
 {
-    // partition : device + user
-    std::string partition = taskmanager[userdevice].partition_device + taskmanager[userdevice].token;
-    dds::core::QosProvider qos_provider("./paasxml/pass_qos.xml");
-    const dds::core::xtypes::DynamicType &mytypePlayH264 = qos_provider.extensions().type("Paas::Cam::PlayH264");
 
+    std::string partition = usertask.partition_device + usertask.username;
+    bool query_type = usertask.query_type;
     dds::sub::Subscriber sub(paas_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos();
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
@@ -122,19 +114,18 @@ void DDSReader::playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
     partitionNames.push_back(partition);
     curPartition.name(partitionNames);
     sub.qos(subQos << curPartition);
-    dds::topic::Topic<dds::core::xtypes::DynamicData> topic(paas_participant, "Tp_PlayH264", mytypePlayH264);
 
     std::string typeflag;
-    if (taskmanager[userdevice].query_type)
+    if (usertask.query_type)
         typeflag = "0x01";
     else
         typeflag = "0x00";
         
 
-    std::string querycond = "source MATCH '" + taskmanager[userdevice].partition_device + "'";
+    std::string querycond = "source MATCH '" + usertask.partition_device + "'";
                             + " AND query_type MATCH " + typeflag;
     // Create the DataReader
-    dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topic);
+    dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicPlayH264);
     dds::sub::cond::QueryCondition cond(
                     dds::sub::Query(reader, querycond),
                     dds::sub::status::DataState(
@@ -147,7 +138,7 @@ void DDSReader::playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
     // Read the data sample
-    while (threadcontroll)
+    while (usertask.threadcontroll)
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
@@ -155,15 +146,16 @@ void DDSReader::playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
         {
             if (sample.info().valid())
             {
-                if (!threadcontroll){
+                if (!usertask.threadcontroll){
+                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
                     DDSWriter ddswriter;
-                    ddswriter.query_writer(taskmanager[userdevice].token, 
-                                            taskmanager[userdevice].ai_type, 
-                                            taskmanager[userdevice].partition_device, 
-                                            taskmanager[userdevice].query_type, 
-                                            taskmanager[userdevice].starttime, 
-                                            taskmanager[userdevice].endtime, 
-                                            0, std::ref(paas_participant));
+                    ddswriter.query_writer(usertask.token, 
+                                            usertask.ai_type, 
+                                            usertask.partition_device, 
+                                            usertask.query_type, 
+                                            usertask.starttime, 
+                                            usertask.endtime, 
+                                            0);
                     return;
                 }
                 PlayH264 playH264;
@@ -197,5 +189,17 @@ void DDSReader::playh264_reader(std::map<UserDevice, UserTask> &taskmanager,
                 }
             }
         }
+    }
+    if (!usertask.threadcontroll){
+        std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
+        DDSWriter ddswriter;
+        ddswriter.query_writer(usertask.token, 
+                                usertask.ai_type, 
+                                usertask.partition_device, 
+                                usertask.query_type, 
+                                usertask.starttime, 
+                                usertask.endtime, 
+                                0);
+        return;
     }
 }

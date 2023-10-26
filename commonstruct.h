@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <rti/rti.hpp>
 #include <map>
 
 struct UserTask
@@ -56,6 +57,21 @@ struct PlayH264 {
     int32_t frame_bytes;
     std::vector<uint8_t> frame;
 };
+
+//Define global map
+extern std::map<UserDevice, UserTask> taskmanager;
+
+// Define ddscam tp_videostream topic and qos
+extern dds::domain::DomainParticipant ddscam_participant;
+extern dds::core::QosProvider ddscam_qos;
+extern const dds::core::xtypes::DynamicType &mytypeVideoStream;
+extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream;
+
+// Define paas tp_playh264 topic and qos
+extern dds::domain::DomainParticipant paas_participant;
+extern dds::core::QosProvider paas_qos;
+extern const dds::core::xtypes::DynamicType &mytypePlayH264;
+extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264;
 
 
 
