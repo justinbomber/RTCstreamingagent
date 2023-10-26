@@ -1,10 +1,10 @@
 CC = /usr/bin/g++
 CFLAGS = -fdiagnostics-color=always -m64 -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -std=c++17 -g
-INCLUDES = -I../../libdatachannel/include/ \
-           -I../../libdatachannel/deps/json/include \
-           -I../../libdatachannel/deps/libjuice/include \
-           -I../../libdatachannel/deps/libsrtp/include \
-           -I../../libdatachannel/deps/plog/include \
+INCLUDES = -I../libdatachannel/include/ \
+           -I../libdatachannel/deps/json/include \
+           -I../libdatachannel/deps/libjuice/include \
+           -I../libdatachannel/deps/libsrtp/include \
+           -I../libdatachannel/deps/plog/include \
            -I$(HOME)/rti_connext_dds-6.1.2/include \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds/hpp
@@ -13,7 +13,7 @@ LIBS = -lpqxx -ldatachannel -lpq -lnddscpp2 -lnddsc -lnddscore -ldl -lm -lpthrea
 
 # Source Files and Object Files
 SOURCES = $(wildcard *.cpp)
-OBJECTS = $(addprefix ../RTCStreamingagent/build/, $(SOURCES:.cpp=.o))
+OBJECTS = $(addprefix ../RTCstreamingagent/build/, $(SOURCES:.cpp=.o))
 
 # Executable Output
 EXECUTABLE = ./build/streamingagent
@@ -26,9 +26,9 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(LIBPATH) $(OBJECTS) $(LIBS) -o $@
 
 # Rule for making object files
-../RTCStreamingagent/build/%.o: %.cpp
+../RTCstreamingagent/build/%.o: %.cpp
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Rule for cleaning the build
 clean:
-	rm -f ../RTCStreamingagent/build/* $(EXECUTABLE)
+	rm -f -r ../RTCstreamingagent/build/* $(EXECUTABLE)
