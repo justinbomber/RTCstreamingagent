@@ -88,5 +88,12 @@
     },
     "C_Cpp.errorSquiggles": "enabled",
     "git.ignoreLimitWarning": true,
-    "python.analysis.typeCheckingMode": "off"
+    "python.analysis.typeCheckingMode": "off",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/justin/home2work/RTCstreamingagent/build",
+            "binaryPath": "/home/justin/home2work/RTCstreamingagent/build/streamingagent",
+            "binaryArgs": []
+        }
+    ]
 }
