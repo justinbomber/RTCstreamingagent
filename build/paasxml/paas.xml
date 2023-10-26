@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://community.rti.com/schema/6.1.2/rti_dds_profiles.xsd">
+  <types>
+    <module name="Paas">
+      <module name="Cam">
+        <struct name= "TagObjectType" nested="true">
+          <member name="tag_object" stringMaxLength="20" type="string"/>
+        </struct>
+        <struct name= "AiMetaType" nested="true">
+          <member name="tag_object" stringMaxLength="20" type="string"/>
+          <member name="upper_left_x" type="int32"/>
+          <member name="upper_left_y" type="int32"/>
+          <member name="width" type="int32"/>
+          <member name="height" type="int32"/>
+          <member name="confidence" type="float32"/>
+        </struct>
+        <!-- 2023/10/16 modified by lunglin for key fields -->        
+        <struct name= "JpegType">
+          <member name="query_type" type="byte"/>
+          <member name="tag_objects" type="nonBasic" nonBasicTypeName= "Paas::Cam::TagObjectType" arrayDimensions="10"/>
+          <member name="source" stringMaxLength="63" type="string"/>
+          <member name="partition_device" stringMaxLength="256" type="string" key="true"/>
+          <member name="partition_user" stringMaxLength="100" type="string" key="true"/>
+          <member name="unix_time" type="int64"/>
+          <member name="nanoseconds" type="int32"/>
+          <member name="format_code" type="int16"/>
+          <member name="flag" type="byte"/>
+          <member name="sequence_number" type="uint32"/>
+          <member name="jpeg_bytes" type="int32"/>
+          <member name="jpeg" sequenceMaxLength="2097152" type="byte"/>
+          <member name="has_ai_meta" type="boolean"/>
+          <member name="ai_meta" sequenceMaxLength="100" type="nonBasic" nonBasicTypeName= "Paas::Cam::AiMetaType"/>
+        </struct>
+        <!-- 2023/10/16 modified by lunglin for 1.key fields 2. activate field added -->
+        <struct name= "Query">
+          <member name="partition_device" stringMaxLength="256" type="string" key="true"/>
+          <member name="partition_user" stringMaxLength="100" type="string" key="true"/>
+          <member name="query_type" type="byte"/>
+          <member name="source" stringMaxLength="63" type="string"/>
+          <member name="unix_time_start" type="int64"/>
+          <member name="unix_time_end" type="int64"/>
+          <member name="tag_objects" type="nonBasic" nonBasicTypeName= "Paas::Cam::TagObjectType" arrayDimensions="14"/>
+          <member name="activate" type="byte"/>
+        </struct>
+        <struct name= "PlayH264">
+          <member name="query_type" type="byte"/>
+          <member name="source" stringMaxLength="63" type="string"/>
+          <member name="unix_time" type="int64"/>
+          <member name="nanoseconds" type="int32"/>
+          <member name="format_code" type="int16"/>
+          <member name="flag" type="byte"/>
+          <member name="sequence_number" type="uint32"/>
+          <member name="frame_bytes" type="int32"/>
+          <member name="frame" sequenceMaxLength="2097152" type="byte"/>
+        </struct>
+      </module>
+    </module>
+  </types>
+</dds>

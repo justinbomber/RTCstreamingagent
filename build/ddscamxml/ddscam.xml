@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://community.rti.com/schema/6.1.2/rti_dds_profiles.xsd">
+    <types>
+        <module name="DdsCam">
+            <struct name= "VideoStream">
+                <member name="source" stringMaxLength="63" id="0" type="string"/>
+                <member name="destination" stringMaxLength="63" id="1" type="string"/>
+                <member name="unix_time" id="2" type="int64"/>
+                <member name="nanoseconds" id="3" type="int32"/>
+                <member name="format_code" id="4" type="int16"/>
+                <member name="session_number" id="5" type="uint16"/>
+                <member name="flag" id="6" type="byte"/>
+                <member name="sequence_number" id="7" type="uint32"/>
+                <member name="frame_bytes" id="8" type="int32"/>
+                <member name="frame" sequenceMaxLength="2097152" id="9" type="byte"/>
+            </struct>
+            <struct name= "DeviceState">
+                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="destination" stringMaxLength="63" type="string"/>
+                <member name="latitude" type="float64"/>
+                <member name="longitude" type="float64"/>
+                <member name="altitude" type="float64"/>
+                <member name="data" stringMaxLength="1023" type="string"/>
+            </struct>
+            <struct name= "Event">
+                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="destination" stringMaxLength="63" type="string"/>
+                <member name="event_id" type="uint16"/>
+                <member name="text_data" stringMaxLength="1023" type="string"/>
+                <member name="binary_data" sequenceMaxLength="1048576" type="byte"/>
+            </struct>
+            <struct name= "CommandRequestReply">
+                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="destination" stringMaxLength="63" type="string"/>
+                <member name="level" type="int16"/>
+                <member name="command_id" type="uint16"/>
+                <member name="length" type="int16"/>
+                <member name="checksum" type="int16"/>
+                <member name="data" stringMaxLength="1024" type="string"/>
+            </struct>
+            <struct name= "DeviceConectivity">
+                <member name="udi" stringMaxLength="63" type="string"/>
+                <member name="type" stringMaxLength="31" type="string"/>
+                <member name="model" stringMaxLength="63" type="string"/>
+                <member name="serial_number" stringMaxLength="31" type="string"/>
+                <member name="description" stringMaxLength="127" type="string"/>
+                <member name="state" stringMaxLength="31" type="string"/>
+                <member name="latitude" type="float64"/>
+                <member name="longitude" type="float64"/>
+                <member name="altitude" type="float64"/>
+                <member name="unix_time" type="int64"/>
+                <member name="nanoseconds" type="int32"/>
+            </struct>
+        </module>
+    </types>
+</dds>
