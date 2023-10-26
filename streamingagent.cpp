@@ -28,32 +28,18 @@ bool globalthread = true;
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
   std::cout << "in resort map" << std::endl;
-  if (usertask.resolution == "1080")
-  {
-    // 刪除所有包含該 token 的 key-value pair
-    for (auto it = taskmanager.begin(); it != taskmanager.end();)
-    {
+  if (usertask.resolution == "1080"){
+    for (auto it = taskmanager.begin(); it != taskmanager.end();){
       if (it->first.token == userdevice.token)
+      {
         it->second.threadcontroll = false;
+        it++;
+      }
       else
         ++it;
     }
-  }
-  bool tokenExists = false;
-  for (const auto& pair : taskmanager) 
-  {
-    if (pair.first.token == userdevice.token)
-    {
-      tokenExists = true;
-      break;
-    }
-  }
-  // 若 resolution 為 480 或者該 token 尚未出現在 map 中，則直接添加。
-  if (usertask.resolution == "480" || !tokenExists)
-  {
-    // TODO: should lock
-    taskmanager[userdevice] = usertask;
-  }
+  } else 
+    return;
 }
 
 void print_help()
@@ -89,45 +75,6 @@ int main(int argc, char *argv[])
   websocket::stream<tcp::socket> ws(ioc);
   std::cout << "連接成功" << std::endl;
 
-  std::string ip_address;
-  std::string port;
-
-  for (int i = 1; i < argc; ++i)
-  {
-    std::string arg = argv[i];
-    if ((arg == "-i") || (arg == "--ip"))
-    {
-      if (i + 1 < argc)
-        ip_address = argv[++i];
-      else
-      {
-        std::cerr << "--ip 選項需要一個值\n";
-        return 1;
-      }
-    }
-    else if ((arg == "-p") || (arg == "--port"))
-    {
-      if (i + 1 < argc)
-        port = argv[++i];
-      else
-      {
-        std::cerr << "--port 選項需要一個值\n";
-        return 1;
-      }
-    }
-    else if ((arg == "-h") || (arg == "--help"))
-    {
-      print_help();
-      return 0;
-    }
-    else
-    {
-      std::cerr << "未知選項: " << arg << "\n";
-      print_help();
-      return 1;
-    }
-  }
-
   // 連線至websocket server
   auto const results = resolver.resolve("10.1.1.104", "8011");
   auto ep = boost::asio::connect(ws.next_layer(), results);
@@ -139,7 +86,6 @@ int main(int argc, char *argv[])
     UserTask usertask;
     // 收到client request
     beast::flat_buffer buffer;
-    std::cout << " ++++++++++listening on " << ip_address << ":" << port << std::endl;
     ws.read(buffer);
     std::string received = beast::buffers_to_string(buffer.data());
     std::cout << "Received: " << received << std::endl;
@@ -162,26 +108,19 @@ int main(int argc, char *argv[])
     usertask.activate = json_obj["activate"].get<bool>();
     usertask.threadcontroll = true;
 
-    // for (auto it = taskmanager.begin(); it != taskmanager.end();)
-    // {
-    //   if (it->first.partition_device == userdevice.partition_device)
-    //     it->second.threadcontroll = false;
-    //   else
-    //     ++it;
-    // }
+    // taskmanager[userdevice] = usertask;
+    resortmap(userdevice, usertask, std::ref(taskmanager));
     taskmanager[userdevice] = usertask;
-    // resortmap(userdevice, task, std::ref(taskmanager));
 
     if (!usertask.path.empty())
     {
+      std::cout << "in thread controll again" << std::endl;
       sub_thread instance;
       std::string outputurl;
       outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]));
       ws.write(net::buffer(outputurl));
       std::cout << "start thread finished !!!!!!!!!!!!" << std::endl;
     }
-    sleep(20);
-    taskmanager[userdevice].threadcontroll = false;
   }
   ws.close(websocket::close_code::normal);
   // while (true)

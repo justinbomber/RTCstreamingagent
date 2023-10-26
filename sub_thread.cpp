@@ -129,7 +129,13 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
     std::cout << "thread controll is false,!!!@@@###, "<< usertask.token << "transferh264 stop" << std::endl;
 }
 
-
+void delete_all_files(const std::filesystem::path& path) {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        if (entry.is_regular_file()) {
+            std::filesystem::remove(entry.path());
+        }
+    }
+}
 
 std::string sub_thread::sub_thread_task(UserTask & usertask)
 {
@@ -165,7 +171,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     std::filesystem::path devicePath = userPath / partition_device;
     filevec.push_back(devicePath);
 
-    // 如果資料夾不存在則創建
+    // create non existing directory
     for (auto &path : filevec)
     {
         if (!std::filesystem::exists(path))
@@ -174,8 +180,8 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             std::cout << "Created directory: " << path.string() << std::endl;
         }
     }
-    std::string partition = partition_device + username;
-
+    delete_all_files(inputdevicePath);
+    delete_all_files(devicePath);
     createM3U8File(catchoutput, path);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
