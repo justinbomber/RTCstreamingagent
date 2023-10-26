@@ -107,16 +107,21 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                 if (extension == ".h264")
                 {
                     if (!usertask.threadcontroll)
-                    {
-                        std::cout << "thread controll is false,!!!@@@###, "<< usertask.token << "transferh264 stop" << std::endl;
                         return;
-                    }
                     const std::string filenameWithoutExt = entry.path().stem().string();
-                    std::string cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -c:v libx264 -c:a aac " +
+                    std::string cmdline;
+                    if(usertask.resolution == "480") 
+                        cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 854x480 " +
+                                          targetFolder + filenameWithoutExt + ".ts && mv " +
+                                          targetFolder + filenameWithoutExt + ".ts " +
+                                          targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
+                    else
+                        cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 1920x1080 " +
                                           targetFolder + filenameWithoutExt + ".ts && mv " +
                                           targetFolder + filenameWithoutExt + ".ts " +
                                           targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
                     system(cmdline.c_str());
+
                     std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
                     appendToM3U8File(m3u8name, targetFolder, m3u8input);
 
@@ -126,7 +131,6 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    std::cout << "thread controll is false,!!!@@@###, "<< usertask.token << "transferh264 stop" << std::endl;
 }
 
 void delete_all_files(const std::filesystem::path& path) {
@@ -245,7 +249,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             readerthread.detach();
         }
         std::thread transthread(transfunc);
-        std::cout << ">>>>start trans thread" << std::endl;
         transthread.detach();
         // TODO: transfer frame to RTC server
     }

@@ -38,8 +38,17 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
       else
         ++it;
     }
-  } else 
-    return;
+  } else if (usertask.resolution == "480"){
+    for (auto it = taskmanager.begin(); it != taskmanager.end();){
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token))
+      {
+        it->second.threadcontroll = false;
+        it++;
+      }
+      else
+        ++it;
+    }
+  }
 }
 
 void print_help()
@@ -73,7 +82,7 @@ int main(int argc, char *argv[])
   sub_thread sub;
   tcp::resolver resolver(ioc);
   websocket::stream<tcp::socket> ws(ioc);
-  std::cout << "連接成功" << std::endl;
+  std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
   auto const results = resolver.resolve("10.1.1.104", "8011");
@@ -114,19 +123,12 @@ int main(int argc, char *argv[])
 
     if (!usertask.path.empty())
     {
-      std::cout << "in thread controll again" << std::endl;
       sub_thread instance;
       std::string outputurl;
       outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]));
       ws.write(net::buffer(outputurl));
-      std::cout << "start thread finished !!!!!!!!!!!!" << std::endl;
     }
   }
   ws.close(websocket::close_code::normal);
-  // while (true)
-  // {
-  //   sleep(1);
-  // }
-  // -------------------------
   return 0;
 }

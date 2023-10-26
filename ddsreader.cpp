@@ -56,10 +56,8 @@ void DDSReader::videostream_reader(UserTask & usertask,
         {
             if (sample.info().valid())
             {
-                if (!usertask.threadcontroll){
-                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
+                if (!usertask.threadcontroll)
                     return;
-                }
                 VideoStream videoStream;
                 dds::core::xtypes::DynamicData& data = const_cast<dds::core::xtypes::DynamicData&>(sample.data());
                 videoStream.source_id = data.value<std::string>("source");
@@ -91,14 +89,9 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 } else {
                     bodyframebuf.insert(bodyframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
                 }
-                if (count == 50) {
-                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
-                    return;
-                }
             }
         }
     }
-    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
 }
 
 void DDSReader::playh264_reader(UserTask &usertask,
@@ -147,7 +140,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
             if (sample.info().valid())
             {
                 if (!usertask.threadcontroll){
-                    std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
                     DDSWriter ddswriter;
                     ddswriter.query_writer(usertask.token, 
                                             usertask.ai_type, 
@@ -191,7 +183,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
         }
     }
     if (!usertask.threadcontroll){
-        std::cout << usertask.token << " finishreading !!!!!!" << std::endl;
         DDSWriter ddswriter;
         ddswriter.query_writer(usertask.token, 
                                 usertask.ai_type, 
