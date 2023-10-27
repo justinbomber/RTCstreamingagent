@@ -1,12 +1,11 @@
 CC = /usr/bin/g++
 CFLAGS = -fdiagnostics-color=always -m64 -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -std=c++17 -g
-INCLUDES = -I../work/libdatachannel/include/ \
-		   -I../work/libdatachannel/deps/json/include \
+INCLUDES = -I$(HOME)/../../usr/include/nlohmann \
 		   -I$(HOME)/rti_connext_dds-6.1.2/include \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds/hpp
 LIBPATH = -L$(HOME)/rti_connext_dds-6.1.2/lib/x64Linux4gcc7.3.0
-LIBS = -lpqxx -ldatachannel -lpq -lnddscpp2 -lnddsc -lnddscore -ldl -lm -lpthread
+LIBS = -lpqxx -lpq -lnddscpp2 -lnddsc -lnddscore -ldl -lm -lpthread -lstdc++fs
 
 # Source Files and Object Files
 SOURCES = $(wildcard *.cpp)
