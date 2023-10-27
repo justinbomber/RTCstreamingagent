@@ -86,12 +86,12 @@ bool pqxxController::open()
         if (this->connection->is_open())
         {
             result = true;
-            std::cout << "Open database successfully." << std::endl;
+            // std::cout << "Open database successfully." << std::endl;
         }
         else
         {
             result = false;
-            std::cout << "Can't open database." << std::endl;
+            // std::cout << "Can't open database." << std::endl;
         }
     }
     catch (const std::exception &e)
@@ -111,7 +111,7 @@ bool pqxxController::close()
             this->connection->disconnect();
 
         result = true;
-        std::cout << "dcdb" << std::endl;
+        // std::cout << "dcdb" << std::endl;
     }
     catch (const std::exception &e)
     {
@@ -126,12 +126,12 @@ void pqxxController::get_app_configuration()
     AppConfig *cfg = new AppConfig();
     if (cfg->openJsonFile(APP_CONFIG))
     {
-        std::cout << "Opened app.json." << std::endl;
+        // std::cout << "Opened app.json." << std::endl;
 
         boost::property_tree::ptree jsonObject;
         if (cfg->getObjectValue("postgres", jsonObject))
         {
-            std::cout << "Opened `postgres` configuration." << std::endl;
+            // std::cout << "Opened `postgres` configuration." << std::endl;
 
             host = jsonObject.get<std::string>(DB_HOST);
             port = jsonObject.get<int>(DB_PORT);
@@ -222,7 +222,7 @@ boost::property_tree::ptree pqxxController::get_all_ai_type_intime(std::string c
                 for (auto const &row : rows)
                 {
                     std::string source = row.at(tag_type[i]).as<std::string>(); // source is a device id
-                    std::cout << source << " ";
+                    // std::cout << source << " ";
                     lchild.put("", source);
                     child.push_back(std::make_pair("", lchild));
                 }
@@ -265,7 +265,7 @@ boost::property_tree::ptree pqxxController::get_multitag_ai_type_intime(std::str
                 for (auto const &row : rows)
                 {
                     std::string source = row.at(user_tag_type[i]).as<std::string>();
-                    std::cout << source << " ";
+                    // std::cout << source << " ";
                     long long int temp = stoi(source);
                     if (count != 0)
                     {
@@ -281,7 +281,7 @@ boost::property_tree::ptree pqxxController::get_multitag_ai_type_intime(std::str
                     child.push_back(std::make_pair("", lchild));
                 }
                 children.push_back(std::make_pair(user_tag_type[i], child));
-                std::cout << user_tag_type[i] << std::endl;
+                // std::cout << user_tag_type[i] << std::endl;
                 lchildren.push_back(std::make_pair("", children));
             }
         }
@@ -292,7 +292,7 @@ boost::property_tree::ptree pqxxController::get_multitag_ai_type_intime(std::str
         else
         {
             json_result.put("ai_type", "");
-            std::cout << "NULL";
+            // std::cout << "NULL";
         }
     }
     catch (const std::exception &e)

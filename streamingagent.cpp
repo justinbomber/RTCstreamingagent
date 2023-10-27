@@ -127,21 +127,21 @@ int main(int argc, char *argv[])
     {
       sub_thread instance;
       std::string outputurl;
-      outputurl = instance.sub_thread_task(std::ref(taskmanager),
-                                           userdevice,
-                                           std::ref(ddscam_participant),
-                                           std::ref(paas_participant));
-      boost::property_tree::ptree jsonObject;
-      pqxxController pqc1;
-      std::string *ai_type_array = &task.ai_type[0];
-      //std::cout << "ai_type_array: " << ai_type_array[0] << std::endl;
-      //std::cout << "ai_type_array: " << ai_type_array[1] << std::endl;
-      jsonObject = pqc1.get_multitag_ai_type_intime(task.partition_device, task.starttime, task.endtime, ai_type_array, task.ai_type.size());
-      jsonObject.put("token", task.token);
-      jsonObject.put("type", "ai_time");
+      outputurl = instance.sub_thread_task(std::ref(usertask));
+      if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
+        boost::property_tree::ptree jsonObject;
+        pqxxController pqc1;
+        std::string *ai_type_array = &usertask.ai_type[0];
+        jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device, 
+                                                      usertask.starttime, 
+                                                      usertask.endtime, ai_type_array, 
+                                                      usertask.ai_type.size());
+        jsonObject.put("token", usertask.token);
+        jsonObject.put("type", "ai_time");
 
-      std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-      ws.write(net::buffer(inifile_text));
+        std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+        ws.write(net::buffer(inifile_text));
+      }
       ws.write(net::buffer(outputurl));
     }
   }
