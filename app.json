@@ -1,0 +1,9 @@
+{
+    "postgres": {
+        "host": "10.1.1.200",
+        "port": 5433,        
+        "dbname": "paasdb",
+        "username": "dds_paas",
+        "password": "postgres"
+    }
+}
