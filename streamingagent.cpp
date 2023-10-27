@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <time.h>
 #include <boost/beast.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 #include <iostream>
 #include <thread>
 #include "sub_thread.h"
@@ -11,6 +12,7 @@
 #include <csignal>
 #include <unistd.h>
 #include "commonstruct.h"
+#include "pqxxController.hpp"
 
 // using namespace boost::asio;
 // using namespace boost::beast;
@@ -85,7 +87,7 @@ int main(int argc, char *argv[])
   std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
-  auto const results = resolver.resolve("10.1.1.104", "8011");
+  auto const results = resolver.resolve("10.1.1.104", "8010");
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
 
@@ -125,7 +127,21 @@ int main(int argc, char *argv[])
     {
       sub_thread instance;
       std::string outputurl;
-      outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]));
+      outputurl = instance.sub_thread_task(std::ref(taskmanager),
+                                           userdevice,
+                                           std::ref(ddscam_participant),
+                                           std::ref(paas_participant));
+      boost::property_tree::ptree jsonObject;
+      pqxxController pqc1;
+      std::string *ai_type_array = &task.ai_type[0];
+      //std::cout << "ai_type_array: " << ai_type_array[0] << std::endl;
+      //std::cout << "ai_type_array: " << ai_type_array[1] << std::endl;
+      jsonObject = pqc1.get_multitag_ai_type_intime(task.partition_device, task.starttime, task.endtime, ai_type_array, task.ai_type.size());
+      jsonObject.put("token", task.token);
+      jsonObject.put("type", "ai_time");
+
+      std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+      ws.write(net::buffer(inifile_text));
       ws.write(net::buffer(outputurl));
     }
   }
