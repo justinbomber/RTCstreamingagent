@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <time.h>
 #include <boost/beast.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 #include <iostream>
 #include <thread>
 #include "sub_thread.h"
@@ -11,6 +12,7 @@
 #include <csignal>
 #include <unistd.h>
 #include "commonstruct.h"
+#include "pqxxController.hpp"
 
 // using namespace boost::asio;
 // using namespace boost::beast;
@@ -43,7 +45,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
     }
   }
   bool tokenExists = false;
-  for (const auto& pair : taskmanager) 
+  for (const auto &pair : taskmanager)
   {
     if (pair.first.token == userdevice.token)
     {
@@ -132,10 +134,9 @@ int main(int argc, char *argv[])
   }
 
   // 連線至websocket server
-  auto const results = resolver.resolve("10.1.1.104", "8011");
+  auto const results = resolver.resolve("10.1.1.104", "8010");
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
-
 
   while (true)
   {
@@ -153,7 +154,9 @@ int main(int argc, char *argv[])
     userdevice.partition_device = json_obj["partition_device"].get<std::string>();
 
     // 設定value
+    // std::cout<<"atleasttohere"<<std::endl;
     task.token = json_obj["token"].get<std::string>();
+    // std::cout<<"atleasttohere2"<<std::endl;
     task.username = json_obj["username"].get<std::string>();
     task.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
     task.partition_device = json_obj["partition_device"].get<std::string>();
@@ -176,6 +179,17 @@ int main(int argc, char *argv[])
                                            userdevice,
                                            std::ref(ddscam_participant),
                                            std::ref(paas_participant));
+      boost::property_tree::ptree jsonObject;
+      pqxxController pqc1;
+      std::string *ai_type_array = &task.ai_type[0];
+      //std::cout << "ai_type_array: " << ai_type_array[0] << std::endl;
+      //std::cout << "ai_type_array: " << ai_type_array[1] << std::endl;
+      jsonObject = pqc1.get_multitag_ai_type_intime(task.partition_device, task.starttime, task.endtime, ai_type_array, task.ai_type.size());
+      jsonObject.put("token", task.token);
+      jsonObject.put("type", "ai_time");
+
+      std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+      ws.write(net::buffer(inifile_text));
       ws.write(net::buffer(outputurl));
     }
   }
