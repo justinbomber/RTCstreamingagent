@@ -1,7 +1,6 @@
 #include <boost/asio.hpp>
 #include <time.h>
 #include <boost/beast.hpp>
-#include <boost/property_tree/ini_parser.hpp>
 #include <iostream>
 #include <thread>
 #include "sub_thread.h"
@@ -12,7 +11,6 @@
 #include <csignal>
 #include <unistd.h>
 #include "commonstruct.h"
-#include "pqxxController.hpp"
 
 // using namespace boost::asio;
 // using namespace boost::beast;
@@ -87,7 +85,7 @@ int main(int argc, char *argv[])
   std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
-  auto const results = resolver.resolve("10.1.1.104", "8010");
+  auto const results = resolver.resolve("10.1.1.104", "8011");
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
 
