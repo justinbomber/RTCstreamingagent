@@ -48,7 +48,9 @@ void DDSReader::videostream_reader(UserTask & usertask,
                         dds::sub::status::ViewState::any(),
                         dds::sub::status::InstanceState::alive()));
 
-    int count = -1;
+    // count要改
+    // int count = -1;
+    int count = 0;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
     while (usertask.threadcontroll)
@@ -74,6 +76,8 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 videoStream.sequence_number = data.value<uint32_t>("sequence_number");
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
+                
+                // 逐 frame抓取
                 saveAsH264File(videoStream.frame, count, filepath);
                 count++;
 

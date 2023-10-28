@@ -155,7 +155,8 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
-    std::string rootpath = "../../work/paas/vue3-video-play/public/ramdisk";
+    // 影片存放根目錄
+    std::string rootpath = "../../videosamples";
     std::string catchinput = rootpath + "/catchinput/" + username + "/" + partition_device + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + username + "/" + partition_device + "/";
 
@@ -209,8 +210,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             std::thread readerthread(videostream_func);
             readerthread.detach();
         // }
-        // std::thread transthread(transfunc);
-        // transthread.detach();
+
+        /*     --- 轉ts ---
+        std::thread transthread(transfunc);
+        transthread.detach();
+        */
     //     // TODO: transfer frame to RTC server
     // }
     // else
