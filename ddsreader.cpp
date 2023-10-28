@@ -21,6 +21,10 @@ void saveAsH264File(const std::vector<uint8_t>& data, int num, std::string filep
     outFile.close();
 }
 
+void bufferWriter(const std::vector<uint8_t>& data) {
+    
+}
+
 void DDSReader::videostream_reader(UserTask & usertask,
                                    std::string filepath)
 {
@@ -70,25 +74,27 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 videoStream.sequence_number = data.value<uint32_t>("sequence_number");
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
+                saveAsH264File(videoStream.frame, count, filepath);
+                count++;
 
-                // 合成frame
-                if(videoStream.flag == 1){
-                    if (count == -1){
-                        count++;
-                        headframebuf = {};
-                        bodyframebuf = {};
-                        headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                        continue;
-                    }
-                    headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                    saveAsH264File(headframebuf, count, filepath);
-                    headframebuf = {};
-                    bodyframebuf = {};
-                    headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                    count++;
-                } else {
-                    bodyframebuf.insert(bodyframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                }
+                // // 合成 second
+                // if(videoStream.flag == 1){
+                //     if (count == -1){
+                //         count++;
+                //         headframebuf = {};
+                //         bodyframebuf = {};
+                //         headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
+                //         continue;
+                //     }
+                //     headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
+                //     saveAsH264File(headframebuf, count, filepath);
+                //     headframebuf = {};
+                //     bodyframebuf = {};
+                //     headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
+                //     count++;
+                // } else {
+                //     bodyframebuf.insert(bodyframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
+                // }
             }
         }
     }

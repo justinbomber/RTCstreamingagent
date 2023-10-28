@@ -32,8 +32,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
   std::cout << "in resort map" << std::endl;
   if (usertask.resolution == "1080"){
     for (auto it = taskmanager.begin(); it != taskmanager.end();){
-      if (it->first.token == userdevice.token)
-      {
+      if (it->first.token == userdevice.token){
         it->second.threadcontroll = false;
         it++;
       }
@@ -42,8 +41,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
     }
   } else if (usertask.resolution == "480"){
     for (auto it = taskmanager.begin(); it != taskmanager.end();){
-      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token))
-      {
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)) {
         it->second.threadcontroll = false;
         it++;
       }
@@ -128,20 +126,20 @@ int main(int argc, char *argv[])
       sub_thread instance;
       std::string outputurl;
       outputurl = instance.sub_thread_task(std::ref(usertask));
-      if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
-        boost::property_tree::ptree jsonObject;
-        pqxxController pqc1;
-        std::string *ai_type_array = &usertask.ai_type[0];
-        jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device, 
-                                                      usertask.starttime, 
-                                                      usertask.endtime, ai_type_array, 
-                                                      usertask.ai_type.size());
-        jsonObject.put("token", usertask.token);
-        jsonObject.put("type", "ai_time");
+      // if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
+      //   boost::property_tree::ptree jsonObject;
+      //   pqxxController pqc1;
+      //   std::string *ai_type_array = &usertask.ai_type[0];
+      //   jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device, 
+      //                                                 usertask.starttime, 
+      //                                                 usertask.endtime, ai_type_array, 
+      //                                                 usertask.ai_type.size());
+      //   jsonObject.put("token", usertask.token);
+      //   jsonObject.put("type", "ai_time");
 
-        std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-        ws.write(net::buffer(inifile_text));
-      }
+      //   std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+      //   ws.write(net::buffer(inifile_text));
+      // }
       ws.write(net::buffer(outputurl));
     }
   }
