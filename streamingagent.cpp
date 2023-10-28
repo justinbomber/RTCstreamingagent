@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
     usertask.threadcontroll = true;
 
     // taskmanager[userdevice] = usertask;
-    resortmap(userdevice, usertask, std::ref(taskmanager));
+    // resortmap(userdevice, usertask, std::ref(taskmanager));
     taskmanager[userdevice] = usertask;
 
     if (!usertask.path.empty())

@@ -38,15 +38,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
     curPartition.name(partitionNames);
     sub.qos(subQos << curPartition);
 
-    std::string querycond = "source MATCH '" + usertask.partition_device + "'";
-    // Create the DataReader
     dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicVideoStream);
-    dds::sub::cond::QueryCondition cond(
-                    dds::sub::Query(reader, querycond),
-                    dds::sub::status::DataState(
-                        dds::sub::status::SampleState::any(),
-                        dds::sub::status::ViewState::any(),
-                        dds::sub::status::InstanceState::alive()));
 
     // count要改
     // int count = -1;
@@ -56,7 +48,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
-        dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
+        dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
 
         for (auto sample : samples)
         {
