@@ -155,6 +155,8 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
+    RTSPServerManager rtspservermanager;
+    nlohmann::json json_obj;
     // 影片存放根目錄
     std::string rootpath = "../../videosamples";
     std::string catchinput = rootpath + "/catchinput/" + username + "/" + partition_device + "/";
@@ -176,6 +178,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     std::filesystem::path devicePath = userPath / partition_device;
     filevec.push_back(devicePath);
 
+    // TODO: gen port num
+    int serverport;
+    portNumBits udpport;
+
+
     // create non existing directory
     for (auto &path : filevec)
     {
@@ -190,83 +197,105 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     createM3U8File(catchoutput, path);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
-                                      catchinput);
+                                      catchinput,
+                                      udpport);
 
     auto playh264_func = std::bind(&DDSReader::playh264_reader, &ddsreader,
                                    std::ref(usertask),
-                                   catchinput);
+                                   catchinput,
+                                   udpport);
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
-    // if (ai_type.size() == 0 && query_type)
-    // {
-        // Read VideoStreaming
-        // if (resolution == "1080")
-        // {
-        //     std::thread readerthread(videostream_func);
-        //     readerthread.detach();
-        // }
-        // else
-        // {
-            // TODO: transfer to 480p
+    auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
+                                    serverport, udpport, 
+                                    usertask.partition_device + "/" + usertask.username);
+    if (ai_type.size() == 0 && query_type)
+    {
+        // Read VideoStream topic;
+        if (resolution == "1080")
+        {
+            // Read VideoStream topic;
             std::thread readerthread(videostream_func);
             readerthread.detach();
-        // }
+        }
+        else
+        {
+            // TODO: transfer to 480p
 
-        /*     --- 轉ts ---
-        std::thread transthread(transfunc);
-        transthread.detach();
-        */
-    //     // TODO: transfer frame to RTC server
-    // }
-    // else
-    // {
-    //     // Write Tp_Query
-    //     ddswriter.query_writer(usertask.token, 
-    //                             usertask.ai_type, 
-    //                             usertask.partition_device, 
-    //                             usertask.query_type, 
-    //                             usertask.starttime, 
-    //                             usertask.endtime, 
-    //                             1);
-    //     if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
-    //     {
-    //         // Read playh264 topic;
-    //         std::thread readerthread(playh264_func);
-    //         readerthread.detach();
-    //     }
-    //     else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
-    //     {
-    //         // TODO: ipfs controller for NCHC
+            // Read VideoStream topic;
+            std::thread readerthread(videostream_func);
+            readerthread.detach();
+        }
+        // start rtps server
+        std::thread rtpsserverthread(rtpsserverfunc);
+        rtpsserverthread.detach();
+        do{
+            if(rtspservermanager.getURL() == "noURL")
+                continue;
+            else{
+                json_obj["url"] = rtspservermanager.getURL();
+                break;
+            }
+        } while(true);
+    }
+    else
+    {
+        // Write Tp_Query
+        ddswriter.query_writer(usertask.token, 
+                                usertask.ai_type, 
+                                usertask.partition_device, 
+                                usertask.query_type, 
+                                usertask.starttime, 
+                                usertask.endtime, 
+                                1);
+        if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
+        {
+            // Read playh264 topic;
+            std::thread readerthread(playh264_func);
+            readerthread.detach();
 
-    // //         // Read playh264 topic;
-    // //         std::thread readerthread(playh264_func);
-    // //         readerthread.detach();
-    // //     }
-    // //     else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
-    // //     {
-    // //         // TODO: ipfs controller for NCHC
+            // start rtps server
+            std::thread rtpsserverthread(rtpsserverfunc);
+            rtpsserverthread.detach();
+            do{
+                if(rtspservermanager.getURL() == "noURL")
+                    continue;
+                else{
+                    json_obj["url"] = rtspservermanager.getURL();
+                    break;
+                }
+            } while(true);
+        }
+        else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
+        {
+            // TODO: ipfs controller for NCHC
 
-    // //         // Read AI tag
+            // Read playh264 topic;
+            std::thread readerthread(playh264_func);
+            readerthread.detach();
+
+            // trasfer to 'ts' format for M3U8
+            std::thread transthread(transfunc);
+            transthread.detach();
+            json_obj["url"] = "http://10.1.1.128:8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+        }
+        else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
+        {
+            // TODO: ipfs controller for NCHC
+
+            // Read playh264 topic;
+            std::thread readerthread(playh264_func);
+            readerthread.detach();
             
-    // //         boost::property_tree::ptree jsonObject;
-    // //         pqxxController pqc1;
-    // //         std::string *ai_type_array=&ai_type[0];
-    // //         jsonObject = pqc1.get_multitag_ai_type_intime(partition_device, starttime, endtime, ai_type_array,ai_type.size());
-    // //         //pqxx::result ai_timestamp = searchdatabase("tb_cam_pre_ai_meta", partition_device, starttime, endtime);
-
-    //         // TODO: Read playh264 topic;
-    //         std::thread readerthread(playh264_func);
-    //         readerthread.detach();
-    //     }
-    //     std::thread transthread(transfunc);
-    //     transthread.detach();
-    //     // TODO: transfer frame to RTC server
-    // }
+            // trasfer to 'ts' format for M3U8
+            std::thread transthread(transfunc);
+            transthread.detach();
+            json_obj["url"] = "http://10.1.1.128:8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+        }
+    }
 
     // 創建 JSON 對象
-    nlohmann::json json_obj;
     json_obj["token"] = username;
     // TODO: change path
-    json_obj["url"] = "http://10.1.1.128:8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
     json_obj["path"] = path;
     json_obj["type"]= "video";
 

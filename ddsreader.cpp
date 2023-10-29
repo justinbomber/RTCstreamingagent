@@ -4,11 +4,30 @@
 #include <rti/rti.hpp>
 #include "ddsreader.h"
 #include "ddswriter.h"
+#include <GroupsockHelper.hh>
 
 DDSReader::~DDSReader() {
 }
 
 DDSReader::DDSReader() {
+
+}
+
+const size_t MAX_PACKET_SIZE = 1472;  // 最大UDP封包大小
+
+void sendLargeData(int sock, const uint8_t* data, size_t dataSize, struct sockaddr_in& addr) {
+    size_t totalSent = 0;
+
+    while (totalSent < dataSize) {
+        size_t toSend = std::min(dataSize - totalSent, MAX_PACKET_SIZE);
+        
+        if (sendto(sock, data + totalSent, toSend, 0, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            perror("sendto() failed");
+            break;
+        }
+
+        totalSent += toSend;
+    }
 }
 
 void saveAsH264File(const std::vector<uint8_t>& data, int num, std::string filepath) {
@@ -21,15 +40,32 @@ void saveAsH264File(const std::vector<uint8_t>& data, int num, std::string filep
     outFile.close();
 }
 
-void bufferWriter(const std::vector<uint8_t>& data) {
-    
-}
+
 
 void DDSReader::videostream_reader(UserTask & usertask,
-                                   std::string filepath)
+                                   std::string filepath,
+                                   std::uint64_t port)
 {
-    std::string partition = usertask.partition_device;
+    int sock;
+    struct sockaddr_in addr;
+    const char *multicast_ip = "239.255.42.42";
+    uint16_t port;
+    port = 1250;  // 你可以更改此端口
+    
+    // 創建socket
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+        perror("socket() failed");
+        return;
+    }
 
+    // 設定目的地址
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(multicast_ip);
+    addr.sin_port = htons(port);
+
+    // ddsreader
+    std::string partition = usertask.partition_device;
     dds::sub::Subscriber sub(ddscam_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos(); 
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
@@ -69,36 +105,33 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
                 
-                // 逐 frame抓取
-                saveAsH264File(videoStream.frame, count, filepath);
-                count++;
-
-                // // 合成 second
-                // if(videoStream.flag == 1){
-                //     if (count == -1){
-                //         count++;
-                //         headframebuf = {};
-                //         bodyframebuf = {};
-                //         headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                //         continue;
-                //     }
-                //     headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                //     saveAsH264File(headframebuf, count, filepath);
-                //     headframebuf = {};
-                //     bodyframebuf = {};
-                //     headframebuf.insert(headframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                //     count++;
-                // } else {
-                //     bodyframebuf.insert(bodyframebuf.end(), videoStream.frame.begin(), videoStream.frame.end());
-                // }
+                sendLargeData(sock, videoStream.frame.data(), videoStream.frame.size(), addr);
             }
         }
     }
 }
 
 void DDSReader::playh264_reader(UserTask &usertask,
-                                std::string filepath)
+                                std::string filepath,
+                                std::uint64_t port)
 {
+    int sock;
+    struct sockaddr_in addr;
+    const char *multicast_ip = "239.255.42.42";
+    uint16_t port;
+    port = 1250;  // 你可以更改此端口
+    
+    // 創建socket
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+        perror("socket() failed");
+        return;
+    }
+
+    // 設定目的地址
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(multicast_ip);
+    addr.sin_port = htons(port);
 
     std::string partition = usertask.partition_device + usertask.username;
     bool query_type = usertask.query_type;
@@ -164,22 +197,26 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playH264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playH264.frame = data.get_values<uint8_t>("frame");
 
-                if(playH264.flag == 1){
-                    if (count == -1){
-                        count++;
+                if (usertask.ai_type.size() > 0 && usertask.query_type)
+                    sendLargeData(sock, playH264.frame.data(), playH264.frame.size(), addr);
+                else{
+                    if(playH264.flag == 1){
+                        if (count == -1){
+                            count++;
+                            headframebuf = {};
+                            bodyframebuf = {};
+                            headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
+                            continue;
+                        }
+                        headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
+                        saveAsH264File(headframebuf, count, filepath);
                         headframebuf = {};
                         bodyframebuf = {};
                         headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
-                        continue;
+                        count++;
+                    } else {
+                        bodyframebuf.insert(bodyframebuf.end(), playH264.frame.begin(), playH264.frame.end());
                     }
-                    headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                    saveAsH264File(headframebuf, count, filepath);
-                    headframebuf = {};
-                    bodyframebuf = {};
-                    headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
-                    count++;
-                } else {
-                    bodyframebuf.insert(bodyframebuf.end(), playH264.frame.begin(), playH264.frame.end());
                 }
             }
         }

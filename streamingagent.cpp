@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
-  auto const results = resolver.resolve("10.1.1.104", "8010");
+  auto const results = resolver.resolve("10.1.1.104", "8011");
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
 

@@ -16,6 +16,7 @@
 #include <filesystem>
 #include "postgresConnector.h"
 #include "commonstruct.h"
+#include "rtspServer.h"
 namespace net = boost::asio;
 namespace websocket = boost::beast::websocket;
 using tcp = boost::asio::ip::tcp;
