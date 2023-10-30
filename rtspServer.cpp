@@ -44,17 +44,17 @@ void RTSPServerManager::startserver(const int serverport, portNumBits const udpp
   }
   *env << " port " << inputPortNum << ")\n";
   url = announceURL(rtspServer, sms);
-  int tunnelingport = 8000;
-  while (true){
-    if (rtspServer->setUpTunnelingOverHTTP(tunnelingport)) {
-      *env << "\n(We use port " << tunnelingport << " for optional RTSP-over-HTTP tunneling.)\n";
-      tunnelingport++;
-      break;
-    }
-  }
+  // int tunnelingport = 8000;
+  // while (true){
+  //   if (rtspServer->setUpTunnelingOverHTTP(tunnelingport)) {
+  //     *env << "\n(We use port " << tunnelingport << " for optional RTSP-over-HTTP tunneling.)\n";
+  //     tunnelingport++;
+  //     break;
+  //   }
+  // }
   
 
-  if (rtspServer->setUpTunnelingOverHTTP(tunnelingport)) {
+  if (rtspServer->setUpTunnelingOverHTTP(8000)) {
     *env << "\n(We use port " << rtspServer->httpServerPortNum() << " for optional RTSP-over-HTTP tunneling.)\n";
   } else {
     *env << "\n(RTSP-over-HTTP tunneling is not available.)\n";
