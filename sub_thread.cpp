@@ -205,6 +205,9 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     portNumBits udpport = 1250;
     serverport = find_available_port(serverport, SOCK_STREAM);
     udpport = find_available_port(udpport, SOCK_DGRAM, "239.255.42.42");
+    std::cout << "================" << std::endl;
+    std::cout << "serverport: " << serverport << ", udpport: " << udpport << std::endl;
+    std::cout << "================" << std::endl;
 
 
     // create non existing directory
@@ -234,6 +237,9 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
                                     usertask.partition_device + "/" + usertask.username);
     if (ai_type.size() == 0 && query_type)
     {
+        // start rtps server
+        std::thread rtpsserverthread(rtpsserverfunc);
+        rtpsserverthread.detach();
         // Read VideoStream topic;
         if (resolution == "1080")
         {
@@ -249,9 +255,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             std::thread readerthread(videostream_func);
             readerthread.detach();
         }
-        // start rtps server
-        std::thread rtpsserverthread(rtpsserverfunc);
-        rtpsserverthread.detach();
         do{
             if(rtspservermanager.getURL() == "noURL")
                 continue;
