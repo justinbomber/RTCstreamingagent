@@ -16,7 +16,10 @@ public:
   ~RTSPServerManager();  // 解構函數
 
   std::string getURL();
-  void startserver(const int serverport, portNumBits const udpport, const std::string urlname);
+  void startserver(const int serverport, 
+                   portNumBits const udpport, 
+                   const std::string urlname,
+                   portNumBits const httptunnelingport);
 
 private:
   UsageEnvironment* env;

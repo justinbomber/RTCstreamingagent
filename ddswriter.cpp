@@ -77,7 +77,7 @@ void DDSWriter::query_writer(const std::string & username,
     Result result = splitString(partition_device);
 
     sample.value<unsigned char>("query_type", query_type);
-    sample.value<std::string>("source", result.source);
+    sample.value<std::string>("source", partition_device);
     sample.value<std::string>("partition_device", partition_device);
     sample.value<std::string>("partition_user", username);
     sample.value<std::int64_t>("unix_time_start", starttime);
@@ -92,7 +92,7 @@ void DDSWriter::query_writer(const std::string & username,
     
     // Write the data sample
     int cc = 0;
-    int target = 5;
+    int target = 3;
     // if (activate == 0)
     //     target = 2;
     // else
@@ -104,6 +104,6 @@ void DDSWriter::query_writer(const std::string & username,
         // Output a log
         std::cout << "Writer is writing a data sample. Value: " << sample;
         cc ++;
-        sleep(1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }

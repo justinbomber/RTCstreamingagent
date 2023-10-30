@@ -106,6 +106,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 videoStream.frame = data.get_values<uint8_t>("frame");
                 
                 sendLargeData(sock, videoStream.frame.data(), videoStream.frame.size(), addr);
+                // std::cout << "frame size: " << videoStream.frame.size() << std::endl;
             }
         }
     }
@@ -133,7 +134,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
     addr.sin_addr.s_addr = inet_addr(multicast_ip);
     addr.sin_port = htons(port);
 
-    std::string partition = usertask.partition_device + usertask.username;
+    std::string partition = usertask.partition_device + "/" + usertask.username;
     bool query_type = usertask.query_type;
     dds::sub::Subscriber sub(paas_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos();

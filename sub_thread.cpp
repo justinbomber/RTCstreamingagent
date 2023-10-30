@@ -2,6 +2,7 @@
 #include <iostream>
 #include "ddsreader.h"
 #include "ddswriter.h"
+#include "H264UDPServerMediaSubsession.hh"
 #include "commonstruct.h"
 
 using namespace std;
@@ -163,7 +164,9 @@ int find_available_port(int start_port, int socket_type, const char* ip_address 
     return -1;
 }
 
-std::string sub_thread::sub_thread_task(UserTask & usertask)
+std::string sub_thread::sub_thread_task(UserTask & usertask, 
+                                        portNumBits udpport,
+                                        std::string ipaddr)
 {
 
     std::string path = usertask.path;
@@ -180,7 +183,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     RTSPServerManager rtspservermanager;
     nlohmann::json json_obj;
     // 影片存放根目錄
-    std::string rootpath = "../../videosamples";
+    std::string rootpath = "../../vue3-video-play/public/ramdisk";
     std::string catchinput = rootpath + "/catchinput/" + username + "/" + partition_device + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + username + "/" + partition_device + "/";
 
@@ -202,11 +205,16 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
 
     // TODO: gen port num
     int serverport = 8554;
-    portNumBits udpport = 1250;
+    // portNumBits udpport = 1250;
+    portNumBits httptunnelingport = 8000;
+
     serverport = find_available_port(serverport, SOCK_STREAM);
-    udpport = find_available_port(udpport, SOCK_DGRAM, "239.255.42.42");
+    httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
+    // TODO:udpport assign
     std::cout << "================" << std::endl;
-    std::cout << "serverport: " << serverport << ", udpport: " << udpport << std::endl;
+    std::cout << "serverport: " << serverport << std::endl;
+    std::cout << "udpport: " << udpport << std::endl;
+    std::cout << "httptunnelingport: " << httptunnelingport << std::endl;
     std::cout << "================" << std::endl;
 
 
@@ -234,7 +242,8 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
                                     serverport, udpport, 
-                                    usertask.partition_device + "/" + usertask.username);
+                                    usertask.partition_device + "/" + usertask.username,
+                                    httptunnelingport);
     if (ai_type.size() == 0 && query_type)
     {
         // start rtps server
@@ -255,19 +264,12 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             std::thread readerthread(videostream_func);
             readerthread.detach();
         }
-        do{
-            if(rtspservermanager.getURL() == "noURL")
-                continue;
-            else{
-                json_obj["url"] = rtspservermanager.getURL();
-                break;
-            }
-        } while(true);
+        json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
     }
     else
     {
         // Write Tp_Query
-        ddswriter.query_writer(usertask.token, 
+        ddswriter.query_writer(usertask.username, 
                                 usertask.ai_type, 
                                 usertask.partition_device, 
                                 usertask.query_type, 
@@ -276,14 +278,14 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
                                 1);
         if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
         {
-            // Read playh264 topic;
-            std::thread readerthread(playh264_func);
-            readerthread.detach();
-
             // start rtps server
             std::thread rtpsserverthread(rtpsserverfunc);
             rtpsserverthread.detach();
 
+            // Read playh264 topic;
+            std::thread readerthread(playh264_func);
+            readerthread.detach();
+            json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         }
         else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
         {
@@ -296,7 +298,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
-            json_obj["url"] = "http://10.1.1.128:8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
         }
         else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
         {
@@ -309,7 +311,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
-            json_obj["url"] = "http://10.1.1.128:8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
         }
     }
 

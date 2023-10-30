@@ -34,7 +34,9 @@ public:
     sub_thread();
     ~sub_thread();
 
-    std::string sub_thread_task(UserTask & usertask);
+    std::string sub_thread_task(UserTask & usertask, 
+                                portNumBits udpport,
+                                std::string ipaddr);
     pqxx::result searchdatabase(const std::string & tablename,
                                 const std::string & source,
                                 const std::int64_t & starttime,

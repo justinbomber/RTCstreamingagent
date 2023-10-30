@@ -52,7 +52,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "H263plusVideoRTPSink.hh"
 #include "H263plusVideoRTPSource.hh"
 #include "H263plusVideoStreamFramer.hh"
-#include "H264UDPServerMediaSubsession.hh"
+// #include "H264UDPServerMediaSubsession.hh"
 #include "H264VideoFileServerMediaSubsession.hh"
 #include "H264VideoFileSink.hh"
 #include "H264VideoRTPSink.hh"

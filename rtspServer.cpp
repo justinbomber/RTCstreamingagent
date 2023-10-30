@@ -1,12 +1,10 @@
 #include "rtspServer.h"
+#include <iostream>
 
 RTSPServerManager::RTSPServerManager() {
-  UsageEnvironment* env;
-  Boolean reuseFirstSource = False;
 }
 
 RTSPServerManager::~RTSPServerManager() {
-  // 在此進行清理，例如釋放內存或關閉文件
 }
 
 std::string RTSPServerManager::getURL() {
@@ -15,9 +13,15 @@ std::string RTSPServerManager::getURL() {
 
 
 // TODO : need control to stop server
-void RTSPServerManager::startserver(const int serverport, portNumBits const udpport, const std::string urlname) {
+void RTSPServerManager::startserver(const int serverport, 
+                                    portNumBits const udpport, 
+                                    const std::string urlname,
+                                    portNumBits const httptunnelingport) {
+  UsageEnvironment* env;
+  Boolean reuseFirstSource = False;
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
   env = BasicUsageEnvironment::createNew(*scheduler);
+  // OutPacketBuffer::maxSize = 2000000;
 
   UserAuthenticationDatabase* authDB = NULL;
   RTSPServer* rtspServer = RTSPServer::createNew(*env, serverport, authDB);
@@ -32,8 +36,11 @@ void RTSPServerManager::startserver(const int serverport, portNumBits const udpp
   char const* inputAddressStr = "239.255.42.42";
   portNumBits const inputPortNum = udpport;
 
-  ServerMediaSession* sms = ServerMediaSession::createNew(*env, streamName, streamName, descriptionString);
-  sms->addSubsession(H264UDPServerMediaSubsession::createNew(*env, inputAddressStr, inputPortNum));
+  ServerMediaSession* sms
+    = ServerMediaSession::createNew(*env, streamName, streamName,
+            descriptionString);
+  sms->addSubsession(H264UDPServerMediaSubsession
+          ::createNew(*env, inputAddressStr, inputPortNum));
   rtspServer->addServerMediaSession(sms);
 
   *env << "\n\"" << streamName << "\" stream, from a UDP Elementary Stream input source \n\t(";
@@ -44,17 +51,12 @@ void RTSPServerManager::startserver(const int serverport, portNumBits const udpp
   }
   *env << " port " << inputPortNum << ")\n";
   url = announceURL(rtspServer, sms);
-  // int tunnelingport = 8000;
-  // while (true){
-  //   if (rtspServer->setUpTunnelingOverHTTP(tunnelingport)) {
-  //     *env << "\n(We use port " << tunnelingport << " for optional RTSP-over-HTTP tunneling.)\n";
-  //     tunnelingport++;
-  //     break;
-  //   }
-  // }
-  
 
-  if (rtspServer->setUpTunnelingOverHTTP(8000)) {
+
+  std::cout << "!!!!!!!!!!!!!" << std::endl;
+  std::cout << httptunnelingport << std::endl;
+  std::cout << "!!!!!!!!!!!!!" << std::endl;
+  if (rtspServer->setUpTunnelingOverHTTP(httptunnelingport)) {
     *env << "\n(We use port " << rtspServer->httpServerPortNum() << " for optional RTSP-over-HTTP tunneling.)\n";
   } else {
     *env << "\n(RTSP-over-HTTP tunneling is not available.)\n";
