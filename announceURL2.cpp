@@ -18,11 +18,11 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // served by a RTSP server.
 // Implementation
 
-#include "announceURL.hh"
+#include "announceURL2.hh"
 #include <GroupsockHelper.hh> // for "weHaveAnIPv*Address()"
 
 std::string announceURL(RTSPServer* rtspServer, ServerMediaSession* sms) {
-  if (rtspServer == NULL || sms == NULL) return; // sanity check
+  if (rtspServer == NULL || sms == NULL) return "noURL"; // sanity check
 
   UsageEnvironment& env = rtspServer->envir();
 

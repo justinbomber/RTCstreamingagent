@@ -21,10 +21,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #ifndef _ANNOUNCE_URL_HH
 #define _ANNOUNCE_URL_HH
 
-#include <string>
 #ifndef _LIVEMEDIA_HH
 #include "liveMedia.hh"
 #endif
+#include <string>
 
 std::string announceURL(RTSPServer* rtspServer, ServerMediaSession* sms);
 

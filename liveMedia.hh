@@ -133,7 +133,6 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "VP9VideoRTPSource.hh"
 #include "WAVAudioFileServerMediaSubsession.hh"
 #include "WAVAudioFileSource.hh"
-#include "announceURL.hh"
 #include "uLawAudioFilter.hh"
 
 

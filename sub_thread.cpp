@@ -59,7 +59,6 @@ void appendToM3U8File(std::string m3u8name, const std::string &directory, const 
     outFile.close();
 }
 
-
 void transferH264(const std::string &targetFolder, UserTask &usertask, std::string m3u8name, const std::string &inputfolder)
 {
     DDSWriter ddswriter;
@@ -141,6 +140,29 @@ void delete_all_files(const std::filesystem::path& path) {
     }
 }
 
+int find_available_port(int start_port, int socket_type, const char* ip_address = "0.0.0.0") {
+    int sock = socket(AF_INET, socket_type, 0);
+    if (sock == -1) {
+        std::cerr << "無法創建 socket\n";
+        return -1;
+    }
+
+    sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(ip_address);
+
+    for (int port = start_port; port < 65535; ++port) {
+        addr.sin_port = htons(port);
+        if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
+            close(sock);
+            return port;
+        }
+    }
+
+    close(sock);
+    return -1;
+}
+
 std::string sub_thread::sub_thread_task(UserTask & usertask)
 {
 
@@ -179,8 +201,10 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
     filevec.push_back(devicePath);
 
     // TODO: gen port num
-    int serverport;
-    portNumBits udpport;
+    int serverport = 8554;
+    portNumBits udpport = 1250;
+    serverport = find_available_port(serverport, SOCK_STREAM);
+    udpport = find_available_port(udpport, SOCK_DGRAM, "239.255.42.42");
 
 
     // create non existing directory
@@ -256,14 +280,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask)
             // start rtps server
             std::thread rtpsserverthread(rtpsserverfunc);
             rtpsserverthread.detach();
-            do{
-                if(rtspservermanager.getURL() == "noURL")
-                    continue;
-                else{
-                    json_obj["url"] = rtspservermanager.getURL();
-                    break;
-                }
-            } while(true);
+
         }
         else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
         {

@@ -49,7 +49,6 @@ void DDSReader::videostream_reader(UserTask & usertask,
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
-    uint16_t port;
     port = 1250;  // 你可以更改此端口
     
     // 創建socket
@@ -118,7 +117,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
-    uint16_t port;
     port = 1250;  // 你可以更改此端口
     
     // 創建socket
