@@ -63,6 +63,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
         }
     } else if (usertask.resolution == "1080") {
         // 处理 1080 的四种状态
+        //auto it = taskmanager.begin(); it != taskmanager.end();
         for (auto& [device, task] : taskmanager) {
             if (device.partition_device == userdevice.partition_device && device.token == userdevice.token) {
                 if (usertask.ai_type.empty()) {
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
     usertask.threadcontroll = true;
 
     // taskmanager[userdevice] = usertask;
-    // resortmap(userdevice, usertask, std::ref(taskmanager));
+    resortmap(userdevice, usertask, std::ref(taskmanager));
     taskmanager[userdevice] = usertask;
 
     if (!usertask.path.empty())
