@@ -127,6 +127,10 @@ void DDSReader::playh264_reader(UserTask &usertask,
         perror("socket() failed");
         return;
     }
+    std::string partition = usertask.partition_device + "/" + usertask.username;
+    std::cout << "aitype length:" << usertask.ai_type.size() << std::endl;
+    std::cout << "query_type length:" << usertask.query_type << std::endl;
+    std::cout << "partition:" << partition << std::endl;
 
     // 設定目的地址
     memset(&addr, 0, sizeof(addr));
@@ -134,7 +138,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
     addr.sin_addr.s_addr = inet_addr(multicast_ip);
     addr.sin_port = htons(port);
 
-    std::string partition = usertask.partition_device + "/" + usertask.username;
     bool query_type = usertask.query_type;
     dds::sub::Subscriber sub(paas_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos();
@@ -197,9 +200,11 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playH264.sequence_number = data.value<uint32_t>("sequence_number");
                 playH264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playH264.frame = data.get_values<uint8_t>("frame");
+                std::cout << "sequence_number: " << playH264.sequence_number << std::endl;
 
-                if (usertask.ai_type.size() > 0 && usertask.query_type)
+                if (usertask.ai_type.size() > 0 && usertask.query_type){
                     sendLargeData(sock, playH264.frame.data(), playH264.frame.size(), addr);
+                }
                 else{
                     if(playH264.flag == 1){
                         if (count == -1){

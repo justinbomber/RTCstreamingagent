@@ -62,6 +62,7 @@ void appendToM3U8File(std::string m3u8name, const std::string &directory, const 
 
 void transferH264(const std::string &targetFolder, UserTask &usertask, std::string m3u8name, const std::string &inputfolder)
 {
+    int should_out = 0;
     DDSWriter ddswriter;
     int traffic_status = 1;
     int last_taraffic_status = 1;
@@ -129,6 +130,10 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                 }
             }
         }
+        if(file_count == 0)
+            should_out++;
+        if(should_out > 100)
+            return;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
@@ -203,20 +208,13 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::filesystem::path devicePath = userPath / partition_device;
     filevec.push_back(devicePath);
 
-    // TODO: gen port num
+    // gen port num start from 8554
     int serverport = 8554;
     // portNumBits udpport = 1250;
     portNumBits httptunnelingport = 8000;
 
     serverport = find_available_port(serverport, SOCK_STREAM);
     httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
-    // TODO:udpport assign
-    std::cout << "================" << std::endl;
-    std::cout << "serverport: " << serverport << std::endl;
-    std::cout << "udpport: " << udpport << std::endl;
-    std::cout << "httptunnelingport: " << httptunnelingport << std::endl;
-    std::cout << "================" << std::endl;
-
 
     // create non existing directory
     for (auto &path : filevec)

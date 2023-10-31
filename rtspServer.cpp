@@ -53,9 +53,6 @@ void RTSPServerManager::startserver(const int serverport,
   url = announceURL(rtspServer, sms);
 
 
-  std::cout << "!!!!!!!!!!!!!" << std::endl;
-  std::cout << httptunnelingport << std::endl;
-  std::cout << "!!!!!!!!!!!!!" << std::endl;
   if (rtspServer->setUpTunnelingOverHTTP(httptunnelingport)) {
     *env << "\n(We use port " << rtspServer->httpServerPortNum() << " for optional RTSP-over-HTTP tunneling.)\n";
   } else {
