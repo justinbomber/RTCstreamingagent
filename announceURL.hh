@@ -24,8 +24,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #ifndef _LIVEMEDIA_HH
 #include "liveMedia.hh"
 #endif
-#include <string>
 
-std::string announceURL(RTSPServer* rtspServer, ServerMediaSession* sms);
+void announceURL(RTSPServer* rtspServer, ServerMediaSession* sms);
 
 #endif

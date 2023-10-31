@@ -50,7 +50,7 @@ void RTSPServerManager::startserver(const int serverport,
     *env << "unicast;";
   }
   *env << " port " << inputPortNum << ")\n";
-  url = announceURL(rtspServer, sms);
+  announceURL(rtspServer, sms);
 
 
   if (rtspServer->setUpTunnelingOverHTTP(httptunnelingport)) {

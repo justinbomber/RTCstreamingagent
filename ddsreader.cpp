@@ -6,22 +6,24 @@
 #include "ddswriter.h"
 #include <GroupsockHelper.hh>
 
-DDSReader::~DDSReader() {
+DDSReader::~DDSReader(){
 }
 
-DDSReader::DDSReader() {
-
+DDSReader::DDSReader(){
 }
 
-const size_t MAX_PACKET_SIZE = 1472;  // 最大UDP封包大小
+const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
-void sendLargeData(int sock, const uint8_t* data, size_t dataSize, struct sockaddr_in& addr) {
+void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
+{
     size_t totalSent = 0;
 
-    while (totalSent < dataSize) {
+    while (totalSent < dataSize)
+    {
         size_t toSend = std::min(dataSize - totalSent, MAX_PACKET_SIZE);
-        
-        if (sendto(sock, data + totalSent, toSend, 0, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+
+        if (sendto(sock, data + totalSent, toSend, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+        {
             perror("sendto() failed");
             break;
         }
@@ -30,19 +32,18 @@ void sendLargeData(int sock, const uint8_t* data, size_t dataSize, struct sockad
     }
 }
 
-void saveAsH264File(const std::vector<uint8_t>& data, int num, std::string filepath) {
+void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filepath)
+{
     std::string filename = filepath + "sample-" + std::to_string(num) + ".h264";
     std::cout << "save as h264 file: " << filename << std::endl;
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile.is_open())
         return;
-    outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+    outFile.write(reinterpret_cast<const char *>(data.data()), data.size());
     outFile.close();
 }
 
-
-
-void DDSReader::videostream_reader(UserTask & usertask,
+void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
 {
@@ -51,9 +52,10 @@ void DDSReader::videostream_reader(UserTask & usertask,
     const char *multicast_ip = "239.255.42.42";
     // port = 1250;  // 你可以更改此端口
     std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
-    
+
     // 創建socket
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
         perror("socket() failed");
         return;
     }
@@ -67,7 +69,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
     // ddsreader
     std::string partition = usertask.partition_device;
     dds::sub::Subscriber sub(ddscam_participant);
-    dds::sub::qos::SubscriberQos subQos = sub.qos(); 
+    dds::sub::qos::SubscriberQos subQos = sub.qos();
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
     std::vector<std::string> partitionNames = curPartition.name();
     partitionNames.push_back(partition);
@@ -93,7 +95,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 if (!usertask.threadcontroll)
                     return;
                 VideoStream videoStream;
-                dds::core::xtypes::DynamicData& data = const_cast<dds::core::xtypes::DynamicData&>(sample.data());
+                dds::core::xtypes::DynamicData &data = const_cast<dds::core::xtypes::DynamicData &>(sample.data());
                 videoStream.source_id = data.value<std::string>("source");
                 videoStream.destination = data.value<std::string>("destination");
                 videoStream.unix_time = data.value<int64_t>("unix_time");
@@ -104,7 +106,7 @@ void DDSReader::videostream_reader(UserTask & usertask,
                 videoStream.sequence_number = data.value<uint32_t>("sequence_number");
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
-                
+
                 sendLargeData(sock, videoStream.frame.data(), videoStream.frame.size(), addr);
                 // std::cout << "frame size: " << videoStream.frame.size() << std::endl;
             }
@@ -121,24 +123,20 @@ void DDSReader::playh264_reader(UserTask &usertask,
     const char *multicast_ip = "239.255.42.42";
     std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
     // port = 1250;  // 你可以更改此端口
-    
+
     // 創建socket
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
         perror("socket() failed");
         return;
     }
     std::string partition = usertask.partition_device + "/" + usertask.username;
-    std::cout << "aitype length:" << usertask.ai_type.size() << std::endl;
-    std::cout << "query_type length:" << usertask.query_type << std::endl;
-    std::cout << "partition:" << partition << std::endl;
-
     // 設定目的地址
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(multicast_ip);
     addr.sin_port = htons(port);
 
-    bool query_type = usertask.query_type;
     dds::sub::Subscriber sub(paas_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos();
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
@@ -152,19 +150,17 @@ void DDSReader::playh264_reader(UserTask &usertask,
         typeflag = "0x01";
     else
         typeflag = "0x00";
-        
 
     std::string querycond = "source MATCH '" + usertask.partition_device + "'";
-                            + " AND query_type MATCH " + typeflag;
+    +" AND query_type MATCH " + typeflag;
     // Create the DataReader
     dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicPlayH264);
-    dds::sub::cond::QueryCondition cond(
-                    dds::sub::Query(reader, querycond),
-                    dds::sub::status::DataState(
-                        dds::sub::status::SampleState::any(),
-                        dds::sub::status::ViewState::any(),
-                        dds::sub::status::InstanceState::alive()));
-
+    // dds::sub::cond::QueryCondition cond(
+    //                 dds::sub::Query(reader, querycond),
+    //                 dds::sub::status::DataState(
+    //                     dds::sub::status::SampleState::any(),
+    //                     dds::sub::status::ViewState::any(),
+    //                     dds::sub::status::InstanceState::alive()));
 
     int count = -1;
     std::vector<uint8_t> bodyframebuf = {};
@@ -173,20 +169,22 @@ void DDSReader::playh264_reader(UserTask &usertask,
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
-        dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
+        // dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
+        dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
         for (auto sample : samples)
         {
             if (sample.info().valid())
             {
-                if (!usertask.threadcontroll){
+                if (!usertask.threadcontroll)
+                {
                     DDSWriter ddswriter;
-                    ddswriter.query_writer(usertask.token, 
-                                            usertask.ai_type, 
-                                            usertask.partition_device, 
-                                            usertask.query_type, 
-                                            usertask.starttime, 
-                                            usertask.endtime, 
-                                            0);
+                    ddswriter.query_writer(usertask.token,
+                                           usertask.ai_type,
+                                           usertask.partition_device,
+                                           usertask.query_type,
+                                           usertask.starttime,
+                                           usertask.endtime,
+                                           0);
                     return;
                 }
                 PlayH264 playH264;
@@ -200,14 +198,15 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playH264.sequence_number = data.value<uint32_t>("sequence_number");
                 playH264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playH264.frame = data.get_values<uint8_t>("frame");
-                std::cout << "sequence_number: " << playH264.sequence_number << std::endl;
 
-                if (usertask.ai_type.size() > 0 && usertask.query_type){
+                if (usertask.ai_type.size() > 0 && usertask.query_type)
                     sendLargeData(sock, playH264.frame.data(), playH264.frame.size(), addr);
-                }
-                else{
-                    if(playH264.flag == 1){
-                        if (count == -1){
+                else
+                {
+                    if (playH264.flag == 1)
+                    {
+                        if (count == -1)
+                        {
                             count++;
                             headframebuf = {};
                             bodyframebuf = {};
@@ -220,22 +219,25 @@ void DDSReader::playh264_reader(UserTask &usertask,
                         bodyframebuf = {};
                         headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
                         count++;
-                    } else {
+                    }
+                    else
+                    {
                         bodyframebuf.insert(bodyframebuf.end(), playH264.frame.begin(), playH264.frame.end());
                     }
                 }
             }
         }
     }
-    if (!usertask.threadcontroll){
+    if (!usertask.threadcontroll)
+    {
         DDSWriter ddswriter;
-        ddswriter.query_writer(usertask.token, 
-                                usertask.ai_type, 
-                                usertask.partition_device, 
-                                usertask.query_type, 
-                                usertask.starttime, 
-                                usertask.endtime, 
-                                0);
+        ddswriter.query_writer(usertask.token,
+                               usertask.ai_type,
+                               usertask.partition_device,
+                               usertask.query_type,
+                               usertask.starttime,
+                               usertask.endtime,
+                               0);
         return;
     }
 }

@@ -134,6 +134,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "WAVAudioFileServerMediaSubsession.hh"
 #include "WAVAudioFileSource.hh"
 #include "uLawAudioFilter.hh"
+#include "announceURL.hh"
 
 
 #endif
