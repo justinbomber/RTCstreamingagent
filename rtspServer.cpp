@@ -21,7 +21,7 @@ void RTSPServerManager::startserver(const int serverport,
   Boolean reuseFirstSource = False;
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
   env = BasicUsageEnvironment::createNew(*scheduler);
-  // OutPacketBuffer::maxSize = 2000000;
+  // OutPacketBuffer::maxSize = 3000000;
 
   UserAuthenticationDatabase* authDB = NULL;
   RTSPServer* rtspServer = RTSPServer::createNew(*env, serverport, authDB);

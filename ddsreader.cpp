@@ -178,7 +178,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 if (!usertask.threadcontroll)
                 {
                     DDSWriter ddswriter;
-                    ddswriter.query_writer(usertask.token,
+                    ddswriter.query_writer(usertask.username,
                                            usertask.ai_type,
                                            usertask.partition_device,
                                            usertask.query_type,
@@ -231,7 +231,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
     if (!usertask.threadcontroll)
     {
         DDSWriter ddswriter;
-        ddswriter.query_writer(usertask.token,
+        ddswriter.query_writer(usertask.username,
                                usertask.ai_type,
                                usertask.partition_device,
                                usertask.query_type,

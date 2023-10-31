@@ -31,7 +31,7 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
     // 寫入指定的字符串
     outFile << "#EXTM3U\n";
     outFile << "#EXT-X-VERSION:3\n";
-    outFile << "#EXT-X-START:TIME-OFFSET=-1,PRECISE=YES\n";
+    // outFile << "#EXT-X-START:TIME-OFFSET=-1,PRECISE=YES\n";
     outFile << "#EXT-X-TARGETDURATION:5\n";
     outFile << "#EXT-X-MEDIA-SEQUENCE:0\n";
 
@@ -80,7 +80,7 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
         if(traffic_status != last_taraffic_status)
         {
             if (traffic_status == 2)
-                ddswriter.query_writer(usertask.token, 
+                ddswriter.query_writer(usertask.username, 
                                         usertask.ai_type, 
                                         usertask.partition_device, 
                                         usertask.query_type, 
@@ -88,7 +88,7 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                                         usertask.endtime, 
                                         2);
             else
-                ddswriter.query_writer(usertask.token, 
+                ddswriter.query_writer(usertask.username, 
                                         usertask.ai_type, 
                                         usertask.partition_device, 
                                         usertask.query_type, 
@@ -130,10 +130,10 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                 }
             }
         }
-        if(file_count == 0)
-            should_out++;
-        if(should_out > 100)
-            return;
+        // if(file_count == 0)
+        //     should_out++;
+        // if(should_out > 100)
+        //     return;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
@@ -175,13 +175,14 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
 {
 
     std::string path = usertask.path;
-    std::string username = usertask.token;
+    std::string token = usertask.token;
     std::string partition_device = usertask.partition_device;
     bool query_type = usertask.query_type;
     std::int64_t starttime = usertask.starttime;
     std::int64_t endtime = usertask.endtime;
     std::string resolution = usertask.resolution;
     std::vector<std::string> ai_type = usertask.ai_type;
+    std::string username = usertask.username;
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
@@ -189,23 +190,23 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     nlohmann::json json_obj;
     // 影片存放根目錄
     std::string rootpath = "../../vue3-video-play/public/ramdisk";
-    std::string catchinput = rootpath + "/catchinput/" + username + "/" + partition_device + "/";
-    std::string catchoutput = rootpath + "/catchoutput/" + username + "/" + partition_device + "/";
+    std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/";
+    std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/";
 
     std::vector<std::filesystem::path> filevec;
     std::filesystem::path rootPath = rootpath;
     filevec.push_back(rootPath);
     std::filesystem::path inputPath = rootPath / "catchinput";
     filevec.push_back(inputPath);
-    std::filesystem::path inputuserPath = rootpath + "/catchinput/" + username;
+    std::filesystem::path inputuserPath = rootpath + "/catchinput/" + partition_device;
     filevec.push_back(inputuserPath);
-    std::filesystem::path inputdevicePath = inputuserPath / partition_device;
+    std::filesystem::path inputdevicePath = inputuserPath / username;
     filevec.push_back(inputdevicePath);
     std::filesystem::path outputPath = rootPath / "catchoutput";
     filevec.push_back(outputPath);
-    std::filesystem::path userPath = rootpath + "/catchoutput/" + username;
+    std::filesystem::path userPath = rootpath + "/catchoutput/" + partition_device;
     filevec.push_back(userPath);
-    std::filesystem::path devicePath = userPath / partition_device;
+    std::filesystem::path devicePath = userPath / username;
     filevec.push_back(devicePath);
 
     // gen port num start from 8554
@@ -314,7 +315,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     }
 
     // 創建 JSON 對象
-    json_obj["token"] = username;
+    json_obj["token"] = token;
     // TODO: change path
     json_obj["path"] = path;
     json_obj["type"]= "video";
