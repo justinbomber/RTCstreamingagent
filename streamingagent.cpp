@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
     {
       sub_thread instance;
       std::string outputurl;
-      outputurl = instance.sub_thread_task(std::ref(usertask), udpport, ipaddr);
+      outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]), udpport, ipaddr);
       if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
         boost::property_tree::ptree jsonObject;
         pqxxController pqc1;
