@@ -20,6 +20,20 @@ struct UserTask
   std::string resolution;
   bool activate;
   bool threadcontroll;
+  bool operator==(const UserTask &other) const
+  {
+    return token == other.token
+        && username == other.username
+        && path == other.path
+        && ai_type == other.ai_type
+        && partition_device == other.partition_device
+        && query_type == other.query_type
+        && starttime == other.starttime
+        && endtime == other.endtime
+        && resolution == other.resolution
+        && activate == other.activate
+        && threadcontroll == other.threadcontroll;
+  }
 };
 struct UserDevice
 {
@@ -32,6 +46,10 @@ struct UserDevice
     if (token > other.token)
       return false;
     return partition_device < other.partition_device;
+  }
+    bool operator==(const UserDevice &other) const
+  {
+    return token == other.token && partition_device == other.partition_device;
   }
 };
 struct VideoStream {
@@ -72,6 +90,9 @@ extern dds::domain::DomainParticipant paas_participant;
 extern dds::core::QosProvider paas_qos;
 extern const dds::core::xtypes::DynamicType &mytypePlayH264;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264;
+
+extern const dds::core::xtypes::DynamicType &mytype;
+extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicQuery;
 
 
 

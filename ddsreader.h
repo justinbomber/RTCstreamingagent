@@ -1,6 +1,5 @@
 #ifndef DDSREADER_H
 #define DDSREADER_H
-
 #include <iostream>
 #include <rti/rti.hpp>
 #include <thread>
@@ -22,6 +21,7 @@
 #include "string"
 #include "BasicUsageEnvironment.hh"
 #include "liveMedia.hh"
+#include "ddsStreamTransformer.hpp"
 
 class DDSReader {
     private:

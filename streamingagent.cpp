@@ -27,69 +27,30 @@ using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
 // 定義taskmanager
-// void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
-// {
-//   std::cout << "in resort map" << std::endl;
-//   if (usertask.resolution == "1080"){
-//     for (auto it = taskmanager.begin(); it != taskmanager.end();){
-//       if (it->first.token == userdevice.token){
-//         it->second.threadcontroll = false;
-//         it++;
-//       }
-//       else
-//         ++it;
-//     }
-//   } else if (usertask.resolution == "480"){
-//     for (auto it = taskmanager.begin(); it != taskmanager.end();){
-//       if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)) {
-//         it->second.threadcontroll = false;
-//         it++;
-//       }
-//       else
-//         ++it;
-//     }
-//   }
-// }
-void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager) {
-    std::cout << "In resort map" << std::endl;
-    
-    if (usertask.resolution == "480") {
-        // 480 只有一种状态：stream without ai
-        for (auto& [device, task] : taskmanager) {
-            if (device.token == userdevice.token) {
-                //task.threadcontroll = false;
-                continue;
-            }
-        }
-    } else if (usertask.resolution == "1080") {
-        // 处理 1080 的四种状态
-        //auto it = taskmanager.begin(); it != taskmanager.end();
-        for (auto& [device, task] : taskmanager) {
-            if (device.partition_device == userdevice.partition_device && device.token == userdevice.token) {
-                if (usertask.ai_type.empty()) {
-                    // 无 AI
-                    if (usertask.query_type == 1) {
-                        // 1080 stream without ai
-                        task.threadcontroll = false;
-                    } else {
-                        // 1080 replay without ai
-                        task.threadcontroll = false;
-                    }
-                } else {
-                    // 有 AI
-                    if (usertask.query_type == 1) {
-                        // 1080 stream with ai
-                        task.threadcontroll = false;
-                    } else {
-                        // 1080 replay with ai
-                        task.threadcontroll = false;
-                    }
-                }
-            }
-        }
+void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
+{
+  std::cout << "in resort map" << std::endl;
+  if (usertask.resolution == "1080"){
+    for (auto it = taskmanager.begin(); it != taskmanager.end();){
+      if (it->first.token == userdevice.token){
+        it->second.threadcontroll = false;
+        it++;
+      }
+      else
+        ++it;
     }
-
+  } else if (usertask.resolution == "480"){
+    for (auto it = taskmanager.begin(); it != taskmanager.end();){
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)) {
+        it->second.threadcontroll = false;
+        it++;
+      }
+      else
+        ++it;
+    }
+  }
 }
+
 void print_help()
 {
   std::cout << "使用方法:\n";
@@ -110,8 +71,7 @@ void signalHandler(int signum)
   exit(signum);
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
   // 定義退出訊號
   signal(SIGINT, signalHandler);
 
@@ -132,7 +92,7 @@ int main(int argc, char *argv[])
 
   while (true)
   {
-    ++udpport;
+    udpport++;
     UserDevice userdevice;
     UserTask usertask;
     // 收到client request
@@ -159,9 +119,19 @@ int main(int argc, char *argv[])
     usertask.activate = json_obj["activate"].get<bool>();
     usertask.threadcontroll = true;
 
-    // taskmanager[userdevice] = usertask;
+    if (userdevice.token == "stopthread")
+      for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
+        {
+          it->second.threadcontroll = false;
+          sleep(5);
+          return 0;
+        }
+
     resortmap(userdevice, usertask, std::ref(taskmanager));
+    // sleep(1);
     taskmanager[userdevice] = usertask;
+
+
 
     if (!usertask.path.empty())
     {

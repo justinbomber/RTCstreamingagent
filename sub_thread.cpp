@@ -297,7 +297,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
         }
         else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
         {
@@ -310,7 +310,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + username + "/" + partition_device + "/" + path + ".m3u8";
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
         }
     }
 
@@ -322,7 +322,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
 
     // 序列化 JSON 對象為字符串
     std::string json_str = json_obj.dump();
-    // sleep(3);
+    sleep(1);
     // return json_str;
     return json_str;
 }

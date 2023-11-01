@@ -1,6 +1,7 @@
 CC = /usr/bin/g++
 CFLAGS = -fdiagnostics-color=always -m64 -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -std=c++17 -g
 INCLUDES = -I$(HOME)/../../usr/include/nlohmann \
+		   -I$(ROOT)/usr/include/x86_64-linux-gnu \
 		   -I$(HOME)/rti_connext_dds-6.1.2/include \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds \
            -I$(HOME)/rti_connext_dds-6.1.2/include/ndds/hpp \
@@ -10,7 +11,7 @@ INCLUDES = -I$(HOME)/../../usr/include/nlohmann \
 		   -I$(ROOT)/usr/local/include/UsageEnvironment 
 LIBPATH = -L$(HOME)/rti_connext_dds-6.1.2/lib/x64Linux4gcc7.3.0 \
 		  -L$(ROOT)/lib/x86_64-linux-gnu
-LIBS = -lpqxx -lpq -lnddscpp2 -lnddsc -lnddscore -ldl -lm -lpthread -lstdc++fs -lliveMedia -lgroupsock -lssl -lcrypto 
+LIBS = -lavcodec -lavformat -lswscale -lpqxx -lpq -lnddscpp2 -lnddsc -lnddscore -ldl -lm -lpthread -lstdc++fs -lliveMedia -lgroupsock -lssl -lcrypto -lavutil
 
 # Source Files and Object Files
 SOURCES = $(wildcard *.cpp)
@@ -30,7 +31,7 @@ all: $(EXECUTABLE)
 
 # Rule for making the executable
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(LIBPATH) $(OBJECTS) $(LIBS) $(LIVE_LIB) -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) $(LIBPATH) $(OBJECTS) $(LIVE_LIB) $(LIBS) -o $@
 
 # Rule for making object files
 build/%.o: %.cpp

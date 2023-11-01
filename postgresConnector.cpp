@@ -8,11 +8,17 @@ PostgresConnector::PostgresConnector()
 
 PostgresConnector::~PostgresConnector()
 {
-    if (this->connection->is_open()) this->connection->disconnect();
-
-    delete this->connection;
-    this->connection = nullptr;
+    try {
+        if (this->connection != nullptr) {  // 檢查 this->connection 是否為 nullptr
+            if (this->connection->is_open()) this->connection->disconnect();
+            delete this->connection;
+            this->connection = nullptr;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
 }
+
 
 bool PostgresConnector::open(std::string dbName, std::string username, std::string password, std::string hostAddress, int port)
 {

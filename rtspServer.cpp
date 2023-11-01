@@ -16,7 +16,8 @@ std::string RTSPServerManager::getURL() {
 void RTSPServerManager::startserver(const int serverport, 
                                     portNumBits const udpport, 
                                     const std::string urlname,
-                                    portNumBits const httptunnelingport) {
+                                    portNumBits const httptunnelingport)
+                                    {
   UsageEnvironment* env;
   Boolean reuseFirstSource = False;
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
@@ -59,6 +60,8 @@ void RTSPServerManager::startserver(const int serverport,
     *env << "\n(RTSP-over-HTTP tunneling is not available.)\n";
   }
 
+  // char eventLoopWatchVariable = 0;
+  // env->taskScheduler().doEventLoop(&eventLoopWatchVariable);
   env->taskScheduler().doEventLoop();
   return;
 }

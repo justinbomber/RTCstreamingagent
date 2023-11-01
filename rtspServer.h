@@ -7,6 +7,7 @@
 #include "GroupsockHelper.hh"
 #include "announceURL.hh"
 #include <string>
+#include <functional>
 #include "H264UDPServerMediaSubsession.hh"
 #include "BasicUsageEnvironment.hh"
 
@@ -20,6 +21,7 @@ public:
                    portNumBits const udpport, 
                    const std::string urlname,
                    portNumBits const httptunnelingport);
+                  //  bool &threadcontroll);
 
 private:
   UsageEnvironment* env;

@@ -61,20 +61,11 @@ void DDSWriter::query_writer(const std::string & username,
 {
     // Create a QosProvider (or use the default one)
     // TODO: add qos
-    dds::core::QosProvider qos_provider("./paasxml/pass_qos.xml");
-    // Get the type called MyType
-    const dds::core::xtypes::DynamicType &mytype = qos_provider.extensions().type("Paas::Cam::Query");
-
-    // The template parameter is DynamicData. The third argument is the
-    // DynamicType, instead of the type name.
-    dds::topic::Topic<dds::core::xtypes::DynamicData> topic(paas_participant, "Tp_Query", mytype);
-
-    // Create the DataWriter
-    dds::pub::DataWriter<dds::core::xtypes::DynamicData> writer(dds::pub::Publisher(paas_participant), topic);
+    dds::pub::DataWriter<dds::core::xtypes::DynamicData> writer(dds::pub::Publisher(paas_participant), topicQuery);
 
     // Create a data sample and assign its values
     dds::core::xtypes::DynamicData sample(mytype);
-    Result result = splitString(partition_device);
+    // Result result = splitString(partition_device);
 
     sample.value<unsigned char>("query_type", query_type);
     sample.value<std::string>("source", partition_device);
@@ -104,6 +95,6 @@ void DDSWriter::query_writer(const std::string & username,
         // Output a log
         std::cout << "Writer is writing a data sample. Value: " << sample;
         cc ++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }

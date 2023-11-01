@@ -6,10 +6,14 @@
 #include "ddswriter.h"
 #include <GroupsockHelper.hh>
 
-DDSReader::~DDSReader(){
+
+
+DDSReader::~DDSReader()
+{
 }
 
-DDSReader::DDSReader(){
+DDSReader::DDSReader()
+{
 }
 
 const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
@@ -83,6 +87,19 @@ void DDSReader::videostream_reader(UserTask &usertask,
     int count = 0;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
+    PaaS::FFmpegDecoder ffmpegdecode;
+    PaaS::H264Converter h264480decoder;
+    if (!ffmpegdecode.initializeDecoder()) 
+    {
+        std::cerr << "Error initializing decoder\n";
+        return;
+    }
+
+    std::vector<uint8_t> frame264;
+
+    bool GotKeyFrame = false;
+
+
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
@@ -107,9 +124,38 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
 
-                sendLargeData(sock, videoStream.frame.data(), videoStream.frame.size(), addr);
-                // std::cout << "frame size: " << videoStream.frame.size() << std::endl;
+
+
+                if (usertask.resolution == "480")
+                {
+                    if (!GotKeyFrame)
+                    {
+                        // 如果帧数据包含SPS和PPS，设置解码器并退出循环
+                        if (videoStream.flag == 1)
+                        {
+                            GotKeyFrame = true;
+                        }
+                        else
+                        {
+                            std::cout << "Not Key Frame" << std::endl;
+                            continue;
+                        }
+                    }
+                    if (!h264480decoder.convertH264(videoStream.frame, frame264))
+                            std::cerr << "Error converting 480P\n";
+                }
+                else
+                {
+                    frame264 = videoStream.frame;
+                }
+                // saveAsH264File(frame264, count, filepath);
+                // if (count < 100){
+                //     count++;
+                //     continue;
+                // } else
+                    sendLargeData(sock, frame264.data(), frame264.size(), addr);
             }
+            // std::cout << "frame size: " << videoStream.frame.size() << std::endl;
         }
     }
 }
