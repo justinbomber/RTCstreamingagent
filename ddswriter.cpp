@@ -83,11 +83,11 @@ void DDSWriter::query_writer(const std::string & username,
     
     // Write the data sample
     int cc = 0;
-    int target = 3;
-    // if (activate == 0)
-    //     target = 2;
-    // else
-    //     target = 5;
+    int target;
+    if (activate == 0)
+        target = 1;
+    else
+        target = 3;
     // while (true)
     while (cc < target)
     {

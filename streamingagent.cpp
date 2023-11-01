@@ -119,13 +119,14 @@ int main(int argc, char *argv[]){
     usertask.activate = json_obj["activate"].get<bool>();
     usertask.threadcontroll = true;
 
-    if (userdevice.token == "stopthread")
+    if (userdevice.token == "stopthread") {
       for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
           it->second.threadcontroll = false;
           sleep(5);
-          return 0;
         }
+      continue;
+    }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
     // sleep(1);
@@ -144,13 +145,14 @@ int main(int argc, char *argv[]){
         std::string *ai_type_array = &usertask.ai_type[0];
         jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device, 
                                                       usertask.starttime, 
-                                                      usertask.endtime, ai_type_array, 
+                                                      usertask.endtime, ai_type_array,
                                                       usertask.ai_type.size());
         jsonObject.put("token", usertask.token);
         jsonObject.put("type", "ai_time");
 
         std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
         ws.write(net::buffer(inifile_text));
+        sleep(1);
       }
       ws.write(net::buffer(outputurl));
     }

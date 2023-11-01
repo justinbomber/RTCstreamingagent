@@ -213,7 +213,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     int serverport = 8554;
     // portNumBits udpport = 1250;
     portNumBits httptunnelingport = 8000;
-
     serverport = find_available_port(serverport, SOCK_STREAM);
     httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
 
@@ -228,7 +227,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     }
     delete_all_files(inputdevicePath);
     delete_all_files(devicePath);
-    createM3U8File(catchoutput, path);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
                                       catchinput,
@@ -297,6 +295,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
+            sleep(10);
             json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
         }
         else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
@@ -310,10 +309,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
+            sleep(10);
             json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
         }
     }
-
+    createM3U8File(catchoutput, path);
     // 創建 JSON 對象
     json_obj["token"] = token;
     // TODO: change path
