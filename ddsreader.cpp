@@ -54,17 +54,16 @@ void DDSReader::videostream_reader(UserTask &usertask,
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
-    // port = 1250;  // 你可以更改此端口
     std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
 
-    // 創建socket
+    // create socket connection
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("socket() failed");
         return;
     }
 
-    // 設定目的地址
+    // initialize
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(multicast_ip);
@@ -82,9 +81,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicVideoStream);
 
-    // count要改
-    // int count = -1;
-    int count = 0;
+    int count = -1;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
     PaaS::FFmpegDecoder ffmpegdecode;
@@ -124,38 +121,22 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 videoStream.frame_bytes = data.value<int32_t>("frame_bytes");
                 videoStream.frame = data.get_values<uint8_t>("frame");
 
-
-
-                if (usertask.resolution == "480")
-                {
-                    if (!GotKeyFrame)
-                    {
-                        // 如果帧数据包含SPS和PPS，设置解码器并退出循环
+                if (usertask.resolution == "480") {
+                    if (!GotKeyFrame) {
                         if (videoStream.flag == 1)
-                        {
                             GotKeyFrame = true;
-                        }
-                        else
-                        {
+                        else {
                             std::cout << "Not Key Frame" << std::endl;
                             continue;
                         }
                     }
                     if (!h264480decoder.convertH264(videoStream.frame, frame264))
                             std::cerr << "Error converting 480P\n";
-                }
-                else
-                {
+                } else {
                     frame264 = videoStream.frame;
                 }
-                // saveAsH264File(frame264, count, filepath);
-                // if (count < 100){
-                //     count++;
-                //     continue;
-                // } else
-                    sendLargeData(sock, frame264.data(), frame264.size(), addr);
+                sendLargeData(sock, frame264.data(), frame264.size(), addr);
             }
-            // std::cout << "frame size: " << videoStream.frame.size() << std::endl;
         }
     }
 }
@@ -168,21 +149,22 @@ void DDSReader::playh264_reader(UserTask &usertask,
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
     std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
-    // port = 1250;  // 你可以更改此端口
 
-    // 創建socket
+    // create socket connection
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("socket() failed");
         return;
     }
-    std::string partition = usertask.partition_device + "/" + usertask.username;
-    // 設定目的地址
+
+    // initialize
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(multicast_ip);
     addr.sin_port = htons(port);
 
+    // Set partition
+    std::string partition = usertask.partition_device + "/" + usertask.username;
     dds::sub::Subscriber sub(paas_participant);
     dds::sub::qos::SubscriberQos subQos = sub.qos();
     auto &curPartition = subQos.policy<dds::core::policy::Partition>();
@@ -191,31 +173,17 @@ void DDSReader::playh264_reader(UserTask &usertask,
     curPartition.name(partitionNames);
     sub.qos(subQos << curPartition);
 
-    std::string typeflag;
-    if (usertask.query_type)
-        typeflag = "0x01";
-    else
-        typeflag = "0x00";
-
-    std::string querycond = "source MATCH '" + usertask.partition_device + "'";
-    +" AND query_type MATCH " + typeflag;
     // Create the DataReader
     dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicPlayH264);
-    // dds::sub::cond::QueryCondition cond(
-    //                 dds::sub::Query(reader, querycond),
-    //                 dds::sub::status::DataState(
-    //                     dds::sub::status::SampleState::any(),
-    //                     dds::sub::status::ViewState::any(),
-    //                     dds::sub::status::InstanceState::alive()));
 
     int count = -1;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
+
     // Read the data sample
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
-        // dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().condition(cond).take();
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
         for (auto sample : samples)
         {
@@ -224,13 +192,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 if (!usertask.threadcontroll)
                 {
                     DDSWriter ddswriter;
-                    ddswriter.query_writer(usertask.username,
-                                           usertask.ai_type,
-                                           usertask.partition_device,
-                                           usertask.query_type,
-                                           usertask.starttime,
-                                           usertask.endtime,
-                                           0);
                     return;
                 }
                 PlayH264 playH264;
@@ -277,13 +238,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
     if (!usertask.threadcontroll)
     {
         DDSWriter ddswriter;
-        ddswriter.query_writer(usertask.username,
-                               usertask.ai_type,
-                               usertask.partition_device,
-                               usertask.query_type,
-                               usertask.starttime,
-                               usertask.endtime,
-                               0);
         return;
     }
 }

@@ -6,7 +6,9 @@
 #include <vector>
 #include <rti/rti.hpp>
 #include <map>
+#include "appConfig.h"
 
+// void initialize();
 struct UserTask
 {
   std::string token;
@@ -94,6 +96,26 @@ extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264;
 extern const dds::core::xtypes::DynamicType &mytype;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicQuery;
 
+// extern std::string postgreshost;
+// extern int postgresport;
+// extern std::string postgresuser;
+// extern std::string postgrespassword;
+// extern std::string postgresdb;
 
+// extern std::string websocketip;
+// extern int websocketport;
+// extern std::string websocketpath;
+
+// extern std::string ddscam_qos;
+// extern std::string ddscam_typedef;
+
+// extern std::string paas_qos;
+// extern std::string paas_typedef;
+
+// extern std::string local_serverip;
+// extern std::string local_rootpath;
+// extern int local_domainid;
+// extern std::string local_udpip;
+// extern int local_udpport;
 
 #endif // COMMONSTRUCT_H

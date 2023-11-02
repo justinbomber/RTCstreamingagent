@@ -143,6 +143,7 @@ void delete_all_files(const std::filesystem::path& path) {
         if (entry.is_regular_file()) {
             std::filesystem::remove(entry.path());
         }
+         std::filesystem::remove_all(entry.path());
     }
 }
 
@@ -169,31 +170,10 @@ int find_available_port(int start_port, int socket_type, const char* ip_address 
     return -1;
 }
 
-std::string sub_thread::sub_thread_task(UserTask & usertask, 
-                                        portNumBits udpport,
-                                        std::string ipaddr)
-{
-
-    std::string path = usertask.path;
-    std::string token = usertask.token;
-    std::string partition_device = usertask.partition_device;
-    bool query_type = usertask.query_type;
-    std::int64_t starttime = usertask.starttime;
-    std::int64_t endtime = usertask.endtime;
-    std::string resolution = usertask.resolution;
-    std::vector<std::string> ai_type = usertask.ai_type;
-    std::string username = usertask.username;
-
-    DDSReader ddsreader;
-    DDSWriter ddswriter;
-    RTSPServerManager rtspservermanager;
-    nlohmann::json json_obj;
-    // 影片存放根目錄
-    std::string rootpath = "../../vue3-video-play/public/ramdisk";
-    std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/";
-    std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/";
-
+void create_userfolder(std::string path, std::string partition_device, std::string username, std::string rootpath, std::time_t timestampnow){
     std::vector<std::filesystem::path> filevec;
+    std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
+    std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
     std::filesystem::path rootPath = rootpath;
     filevec.push_back(rootPath);
     std::filesystem::path inputPath = rootPath / "catchinput";
@@ -206,15 +186,9 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     filevec.push_back(outputPath);
     std::filesystem::path userPath = rootpath + "/catchoutput/" + partition_device;
     filevec.push_back(userPath);
-    std::filesystem::path devicePath = userPath / username;
-    filevec.push_back(devicePath);
+    std::filesystem::path outputdevicePath = userPath / username;
+    filevec.push_back(outputdevicePath);
 
-    // gen port num start from 8554
-    int serverport = 8554;
-    // portNumBits udpport = 1250;
-    portNumBits httptunnelingport = 8000;
-    serverport = find_available_port(serverport, SOCK_STREAM);
-    httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
 
     // create non existing directory
     for (auto &path : filevec)
@@ -226,7 +200,48 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         }
     }
     delete_all_files(inputdevicePath);
-    delete_all_files(devicePath);
+    delete_all_files(outputdevicePath);
+    std::filesystem::path catchinputpath = inputdevicePath / std::to_string(timestampnow);
+    std::filesystem::path catchoutputpath = outputdevicePath / std::to_string(timestampnow);
+    if (!std::filesystem::exists(catchinputpath))
+        std::filesystem::create_directories(catchinputpath);
+    if (!std::filesystem::exists(catchoutputpath))
+        std::filesystem::create_directories(catchoutputpath);
+    createM3U8File(catchoutput, path);
+}
+
+std::string sub_thread::sub_thread_task(UserTask & usertask, 
+                                        portNumBits udpport,
+                                        std::string ipaddr)
+{
+    std::string path = usertask.path;
+    std::string token = usertask.token;
+    std::string partition_device = usertask.partition_device;
+    bool query_type = usertask.query_type;
+    std::int64_t starttime = usertask.starttime;
+    std::int64_t endtime = usertask.endtime;
+    std::string resolution = usertask.resolution;
+    std::vector<std::string> ai_type = usertask.ai_type;
+    std::string username = usertask.username;
+
+    std::time_t timestampnow = std::time(0);
+
+    DDSReader ddsreader;
+    DDSWriter ddswriter;
+    RTSPServerManager rtspservermanager;
+    nlohmann::json json_obj;
+    // 影片存放根目錄
+    std::string rootpath = "../../vue3-video-play/public/ramdisk";
+    std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
+    std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
+
+    
+    // gen port num start from 8554
+    int serverport = 8554;
+    // portNumBits udpport = 1250;
+    portNumBits httptunnelingport = 8000;
+    serverport = find_available_port(serverport, SOCK_STREAM);
+    httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
                                       catchinput,
@@ -286,7 +301,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         }
         else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
         {
-            // TODO: ipfs controller for NCHC
+            create_userfolder(path, partition_device, username, rootpath, timestampnow);
 
             // Read playh264 topic;
             std::thread readerthread(playh264_func);
@@ -295,28 +310,51 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             // trasfer to 'ts' format for M3U8
             std::thread transthread(transfunc);
             transthread.detach();
-            sleep(10);
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
-        }
-        else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
-        {
-            // TODO: ipfs controller for NCHC
-
-            // Read playh264 topic;
-            std::thread readerthread(playh264_func);
-            readerthread.detach();
             
-            // trasfer to 'ts' format for M3U8
-            std::thread transthread(transfunc);
-            transthread.detach();
-            sleep(10);
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + partition_device + "/" + username + "/" + path + ".m3u8";
+            int fileexist = 0;
+            while(true){
+                fileexist = 0;
+                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+                    if (entry.is_regular_file()) 
+                        ++fileexist;
+                if (fileexist > 3)
+                    break;
+            }
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+                                partition_device + "/" + 
+                                username + "/" +
+                                std::to_string(timestampnow) + "/" +
+                                path + ".m3u8";
+        }                                                                                                            
+        else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
+        {                                                              
+            create_userfolder(path, partition_device, username, rootpath, timestampnow);
+                                                                       
+            // Read playh264 topic;                                    
+            std::thread readerthread(playh264_func);                   
+            readerthread.detach();                                     
+                                                                       
+            // trasfer to 'ts' format for M3U8                         
+            std::thread transthread(transfunc);                        
+            transthread.detach();                                      
+
+            int fileexist = 0;
+            while(true){
+                fileexist = 0;
+                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+                    if (entry.is_regular_file()) 
+                        ++fileexist;
+                if (fileexist > 3)
+                    break;
+            }
+            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+                                partition_device + "/" + 
+                                username + "/" +
+                                std::to_string(timestampnow) + "/" +
+                                path + ".m3u8";
         }
     }
-    createM3U8File(catchoutput, path);
-    // 創建 JSON 對象
     json_obj["token"] = token;
-    // TODO: change path
     json_obj["path"] = path;
     json_obj["type"]= "video";
 

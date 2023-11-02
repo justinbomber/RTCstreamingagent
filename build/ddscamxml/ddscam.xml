@@ -3,7 +3,7 @@
     <types>
         <module name="DdsCam">
             <struct name= "VideoStream">
-                <member name="source" stringMaxLength="63" id="0" type="string"/>
+                <member name="source" stringMaxLength="63" id="0" type="string" key="true"/>
                 <member name="destination" stringMaxLength="63" id="1" type="string"/>
                 <member name="unix_time" id="2" type="int64"/>
                 <member name="nanoseconds" id="3" type="int32"/>
@@ -15,7 +15,7 @@
                 <member name="frame" sequenceMaxLength="2097152" id="9" type="byte"/>
             </struct>
             <struct name= "DeviceState">
-                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="source" stringMaxLength="63" type="string" key="true"/>
                 <member name="destination" stringMaxLength="63" type="string"/>
                 <member name="latitude" type="float64"/>
                 <member name="longitude" type="float64"/>
@@ -23,14 +23,14 @@
                 <member name="data" stringMaxLength="1023" type="string"/>
             </struct>
             <struct name= "Event">
-                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="source" stringMaxLength="63" type="string" key="true"/>
                 <member name="destination" stringMaxLength="63" type="string"/>
                 <member name="event_id" type="uint16"/>
                 <member name="text_data" stringMaxLength="1023" type="string"/>
                 <member name="binary_data" sequenceMaxLength="1048576" type="byte"/>
             </struct>
             <struct name= "CommandRequestReply">
-                <member name="source" stringMaxLength="63" type="string"/>
+                <member name="source" stringMaxLength="63" type="string" key="true"/>
                 <member name="destination" stringMaxLength="63" type="string"/>
                 <member name="level" type="int16"/>
                 <member name="command_id" type="uint16"/>
@@ -39,7 +39,7 @@
                 <member name="data" stringMaxLength="1024" type="string"/>
             </struct>
             <struct name= "DeviceConectivity">
-                <member name="udi" stringMaxLength="63" type="string"/>
+                <member name="udi" stringMaxLength="63" type="string" key="true"/>
                 <member name="type" stringMaxLength="31" type="string"/>
                 <member name="model" stringMaxLength="63" type="string"/>
                 <member name="serial_number" stringMaxLength="31" type="string"/>

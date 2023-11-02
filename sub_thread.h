@@ -3,6 +3,7 @@
 
 #include <string>
 #include <queue>
+#include <ctime>
 #include <mutex>
 #include <condition_variable>
 #include <atomic>

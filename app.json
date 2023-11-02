@@ -5,5 +5,25 @@
         "dbname": "paasdb",
         "username": "dds_paas",
         "password": "postgres"
+    },
+    "websocket": {
+        "ip": "10.1.1.104",
+        "port": 8011,
+        "path": "ddsagent"
+    },
+    "ddscam": {
+        "qos": "ddscamxml/ddscam_qos.xml",
+        "typedef": "ddscamxml/ddscam.xml"
+    },
+    "paas": {
+        "qos": "paasxml/paas_qos.xml",
+        "typedef": "paasxml/paas.xml"
+    },
+    "local": {
+        "serverip":"10.1.1.128",
+        "hisrootpath": "../../vue3-video-play/public/ramdisk",
+        "ddsdomainid": 66,
+        "udpip": "239.255.42.42",
+        "udpport": 1250
     }
 }

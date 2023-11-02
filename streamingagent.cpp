@@ -29,11 +29,21 @@ bool globalthread = true;
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
+  DDSWriter ddswriter;
   std::cout << "in resort map" << std::endl;
   if (usertask.resolution == "1080"){
     for (auto it = taskmanager.begin(); it != taskmanager.end();){
       if (it->first.token == userdevice.token){
         it->second.threadcontroll = false;
+        if (!it->second.query_type || it->second.ai_type.size() > 0){
+          ddswriter.query_writer(it->second.username,
+                                it->second.ai_type,
+                                it->second.partition_device,
+                                it->second.query_type,
+                                it->second.starttime,
+                                it->second.endtime,
+                                0);
+        }
         it++;
       }
       else
@@ -42,6 +52,13 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
   } else if (usertask.resolution == "480"){
     for (auto it = taskmanager.begin(); it != taskmanager.end();){
       if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)) {
+        ddswriter.query_writer(it->second.username,
+                                it->second.ai_type,
+                                it->second.partition_device,
+                                it->second.query_type,
+                                it->second.starttime,
+                                it->second.endtime,
+                                0);
         it->second.threadcontroll = false;
         it++;
       }
@@ -49,15 +66,6 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
         ++it;
     }
   }
-}
-
-void print_help()
-{
-  std::cout << "使用方法:\n";
-  std::cout << "  -i, --ip <IP地址>     設定 IP 地址\n";
-  std::cout << "  -p, --port <端口>     設定端口\n";
-  std::cout << "  -h, --help            顯示幫助訊息\n";
-  exit(0);
 }
 
 void signalHandler(int signum)
@@ -67,7 +75,8 @@ void signalHandler(int signum)
   {
     it->second.threadcontroll = false;
   }
-  std::cout << "捕獲到Ctrl+C信號（" << signum << "），清理資源..." << std::endl;
+  std::cout << "Capture \'Ctrl+C\' signal(" << signum << "), exiting..." << std::endl;
+  sleep(5);
   exit(signum);
 }
 
@@ -119,6 +128,9 @@ int main(int argc, char *argv[]){
     usertask.activate = json_obj["activate"].get<bool>();
     usertask.threadcontroll = true;
 
+    if (usertask.partition_device == "Cam003")
+      usertask.partition_device = "CAM003";
+
     if (userdevice.token == "stopthread") {
       for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
@@ -129,7 +141,7 @@ int main(int argc, char *argv[]){
     }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
-    // sleep(1);
+    sleep(1);
     taskmanager[userdevice] = usertask;
 
 

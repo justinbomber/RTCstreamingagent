@@ -42,7 +42,7 @@ DDSWriter::Result DDSWriter::splitString(const std::string& input) {
 
 std::vector<std::string> parseInput(const std::string& input) {
     std::vector<std::string> result;
-    std::stringstream ss(input.substr(1, input.size() - 2)); // 去掉開頭和結尾的括號
+    std::stringstream ss(input.substr(1, input.size() - 2));
     std::string token;
     while (std::getline(ss, token, ',')) {
         result.push_back(token);
@@ -85,7 +85,7 @@ void DDSWriter::query_writer(const std::string & username,
     int cc = 0;
     int target;
     if (activate == 0)
-        target = 1;
+        target = 2;
     else
         target = 3;
     // while (true)
@@ -95,6 +95,6 @@ void DDSWriter::query_writer(const std::string & username,
         // Output a log
         std::cout << "Writer is writing a data sample. Value: " << sample;
         cc ++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 }

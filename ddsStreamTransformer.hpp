@@ -214,6 +214,7 @@ public:
         encode_ctx->width = 854;
         encode_ctx->time_base = (AVRational){1, 30};
         encode_ctx->bit_rate = 2000000;  // Adjust as needed
+        encode_ctx->profile = FF_PROFILE_H264_MAIN;
 
         av_opt_set(encode_ctx->priv_data, "preset", "ultrafast", 0);
 
