@@ -135,7 +135,8 @@ int main(int argc, char *argv[]){
       for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
           it->second.threadcontroll = false;
-          sleep(5);
+          taskmanager.erase(it->first);
+          sleep(1);
         }
       continue;
     }
