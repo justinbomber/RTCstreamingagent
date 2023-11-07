@@ -7,11 +7,6 @@ RTSPServerManager::RTSPServerManager() {
 RTSPServerManager::~RTSPServerManager() {
 }
 
-std::string RTSPServerManager::getURL() {
-  return url;
-}
-
-
 // TODO : need control to stop server
 void RTSPServerManager::startserver(const int serverport, 
                                     portNumBits const udpport, 

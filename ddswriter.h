@@ -28,6 +28,8 @@ class DDSWriter {
                         bool query_type,
                         const std::int64_t & starttime,
                         const std::int64_t & endtime,
+                        const std::string & token,
+                        const std::string & path,
                         uint8_t activate);
         Result splitString(const std::string& input);
 };

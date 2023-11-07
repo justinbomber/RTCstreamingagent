@@ -56,6 +56,8 @@ void DDSWriter::query_writer(const std::string & username,
                             bool query_type,
                             const std::int64_t & starttime,
                             const std::int64_t & endtime,
+                            const std::string & token,
+                            const std::string & path,
                             uint8_t activate)
 // TODO: partition_device need to seperate to source(uuid) and x y location.
 {
@@ -74,6 +76,8 @@ void DDSWriter::query_writer(const std::string & username,
     sample.value<std::int64_t>("unix_time_start", starttime);
     sample.value<std::int64_t>("unix_time_end", endtime);
     sample.value<std::uint8_t>("activate", activate);
+    sample.value<std::string>("token", token);
+    sample.value<std::string>("path", path);
     for (size_t i = 0; i < ai_type.size(); ++i) {
         std::stringstream ss;
         ss << "tag_objects[" << i << "].tag_object";

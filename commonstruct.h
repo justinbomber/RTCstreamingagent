@@ -7,6 +7,7 @@
 #include <rti/rti.hpp>
 #include <map>
 #include "appConfig.h"
+#include <thread>
 
 // void initialize();
 struct UserTask
@@ -22,6 +23,7 @@ struct UserTask
   std::string resolution;
   bool activate;
   bool threadcontroll;
+  std::thread::id thread_id;
   bool operator==(const UserTask &other) const
   {
     return token == other.token
@@ -34,7 +36,9 @@ struct UserTask
         && endtime == other.endtime
         && resolution == other.resolution
         && activate == other.activate
-        && threadcontroll == other.threadcontroll;
+        && threadcontroll == other.threadcontroll
+        && token == other.token
+        && path == other.path;
   }
 };
 struct UserDevice

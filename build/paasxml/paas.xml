@@ -15,7 +15,7 @@
           <member name="confidence" type="float32"/>
         </struct>
         <!-- 2023/10/16 modified by lunglin for key fields -->        
-        <struct name= "JpegType">
+        <!-- <struct name= "JpegType">
           <member name="query_type" type="byte"/>
           <member name="tag_objects" type="nonBasic" nonBasicTypeName= "Paas::Cam::TagObjectType" arrayDimensions="10"/>
           <member name="source" stringMaxLength="63" type="string"/>
@@ -30,11 +30,27 @@
           <member name="jpeg" sequenceMaxLength="2097152" type="byte"/>
           <member name="has_ai_meta" type="boolean"/>
           <member name="ai_meta" sequenceMaxLength="100" type="nonBasic" nonBasicTypeName= "Paas::Cam::AiMetaType"/>
+        </struct> -->
+        <!-- 2023/11/06 modified by Sam for 1.delete JpegType 2.added RtspType -->
+        <struct name= "RtspType">
+          <member name="source" stringMaxLength="63" type="string"/>
+          <member name="partition_device" stringMaxLength="256" type="string" key="true"/>
+          <member name="token" stringMaxLength="100" type="string" key="true"/>
+          <member name="tag_objects" type="nonBasic" nonBasicTypeName= "Paas::Cam::TagObjectType" arrayDimensions="10"/>
+          <member name="ip" stringMaxLength="20" type="string"/>
+          <member name="port" type="int32"/>
+          <member name="path" stringMaxLength="63" type="string"/>
+          <member name="rtsp_url" stringMaxLength="100" type="string"/>
+          <member name="has_ai_meta" type="boolean"/>
+          <member name="ai_meta" sequenceMaxLength="100" type="nonBasic" nonBasicTypeName= "Paas::Cam::AiMetaType"/>
         </struct>
         <!-- 2023/10/16 modified by lunglin for 1.key fields 2. activate field added -->
+        <!-- 2023/11/07 modified by Sam for 1. token & path field added -->
         <struct name= "Query">
           <member name="partition_device" stringMaxLength="256" type="string" key="true"/>
           <member name="partition_user" stringMaxLength="100" type="string" key="true"/>
+          <member name="token" stringMaxLength="100" type="string"/>
+          <member name="path" stringMaxLength="63" type="string"/>
           <member name="query_type" type="byte"/>
           <member name="source" stringMaxLength="63" type="string"/>
           <member name="unix_time_start" type="int64"/>

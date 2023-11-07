@@ -34,7 +34,11 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
   if (usertask.resolution == "1080"){
     for (auto it = taskmanager.begin(); it != taskmanager.end();){
       if (it->first.token == userdevice.token){
+        // pthread_t thread_id = std::hash<std::thread::id>()(it->second.thread_id);
+        // std::map<UserDevice, UserTask>::iterator iter = it;
+        // pthread_cancel(thread_id);
         it->second.threadcontroll = false;
+        
         if (!it->second.query_type || it->second.ai_type.size() > 0){
           ddswriter.query_writer(it->second.username,
                                 it->second.ai_type,
@@ -42,6 +46,8 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
                                 it->second.query_type,
                                 it->second.starttime,
                                 it->second.endtime,
+                                it->second.token,
+                                it->second.path,
                                 0);
         }
         it++;
@@ -58,6 +64,8 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
                                 it->second.query_type,
                                 it->second.starttime,
                                 it->second.endtime,
+                                it->second.token,
+                                it->second.path,
                                 0);
         it->second.threadcontroll = false;
         it++;
@@ -134,8 +142,8 @@ int main(int argc, char *argv[]){
     if (userdevice.token == "stopthread") {
       for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
-          it->second.threadcontroll = false;
-          taskmanager.erase(it->first);
+          pthread_t thread_id = std::hash<std::thread::id>()(it->second.thread_id);
+          pthread_cancel(thread_id);
           sleep(1);
         }
       continue;
@@ -167,7 +175,10 @@ int main(int argc, char *argv[]){
         ws.write(net::buffer(inifile_text));
         sleep(1);
       }
-      ws.write(net::buffer(outputurl));
+      if (usertask.ai_type.size() > 0 && usertask.query_type)
+        continue;
+      else
+        ws.write(net::buffer(outputurl));
     }
   }
   ws.close(websocket::close_code::normal);

@@ -86,6 +86,8 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                                         usertask.query_type, 
                                         usertask.starttime, 
                                         usertask.endtime, 
+                                        usertask.token,
+                                        usertask.path,
                                         2);
             else
                 ddswriter.query_writer(usertask.username, 
@@ -93,7 +95,9 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                                         usertask.partition_device, 
                                         usertask.query_type, 
                                         usertask.starttime, 
-                                        usertask.endtime, 
+                                        usertask.endtime,
+                                        usertask.token,
+                                        usertask.path,
                                         1);
 
             last_taraffic_status = traffic_status;
@@ -266,6 +270,8 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         {
             // Read VideoStream topic;
             std::thread readerthread(videostream_func);
+            usertask.thread_id = readerthread.get_id();
+            // pthread_cancel(it->second)
             readerthread.detach();
         }
         else
@@ -274,6 +280,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
 
             // Read VideoStream topic;
             std::thread readerthread(videostream_func);
+            usertask.thread_id = readerthread.get_id();
             readerthread.detach();
         }
         json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
@@ -287,16 +294,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 usertask.query_type, 
                                 usertask.starttime, 
                                 usertask.endtime, 
+                                usertask.token,
+                                usertask.path,
                                 1);
         if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
         {
-            // start rtps server
-            std::thread rtpsserverthread(rtpsserverfunc);
-            rtpsserverthread.detach();
-
-            // Read playh264 topic;
-            std::thread readerthread(playh264_func);
-            readerthread.detach();
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         }
         else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
