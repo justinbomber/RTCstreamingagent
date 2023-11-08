@@ -6,6 +6,7 @@
 #include <vector>
 #include <rti/rti.hpp>
 #include <map>
+#include <atomic>
 #include "appConfig.h"
 #include <thread>
 
@@ -23,7 +24,8 @@ struct UserTask
   std::string resolution;
   bool activate;
   bool threadcontroll;
-  std::thread::id thread_id;
+  // std::thread::id thread_id;
+  pthread_t thread_id;
   bool operator==(const UserTask &other) const
   {
     return token == other.token

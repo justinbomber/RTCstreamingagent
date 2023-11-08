@@ -60,7 +60,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
     // create socket connection
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
-        perror("socket() failed");
+        std::cout << "socket failed" << std::endl;
         return;
     }
 
@@ -85,18 +85,17 @@ void DDSReader::videostream_reader(UserTask &usertask,
     int count = -1;
     std::vector<uint8_t> bodyframebuf = {};
     std::vector<uint8_t> headframebuf = {};
-    PaaS::FFmpegDecoder ffmpegdecode;
     PaaS::H264Converter h264480decoder;
+    PaaS::FFmpegDecoder ffmpegdecode;
     if (!ffmpegdecode.initializeDecoder()) 
     {
-        std::cerr << "Error initializing decoder\n";
+        std::cout << "Error initializing decoder\n";
         return;
     }
 
     std::vector<uint8_t> frame264;
 
     bool GotKeyFrame = false;
-
 
     while (usertask.threadcontroll)
     {

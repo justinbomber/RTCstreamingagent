@@ -32,32 +32,33 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
   DDSWriter ddswriter;
   std::cout << "in resort map" << std::endl;
   if (usertask.resolution == "1080"){
-    for (auto it = taskmanager.begin(); it != taskmanager.end();){
+    for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
       if (it->first.token == userdevice.token){
-        // pthread_t thread_id = std::hash<std::thread::id>()(it->second.thread_id);
-        // std::map<UserDevice, UserTask>::iterator iter = it;
-        // pthread_cancel(thread_id);
         it->second.threadcontroll = false;
-        
-        if (!it->second.query_type || it->second.ai_type.size() > 0){
-          ddswriter.query_writer(it->second.username,
-                                it->second.ai_type,
-                                it->second.partition_device,
-                                it->second.query_type,
-                                it->second.starttime,
-                                it->second.endtime,
-                                it->second.token,
-                                it->second.path,
-                                0);
-        }
-        it++;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
-      else
-        ++it;
     }
   } else if (usertask.resolution == "480"){
-    for (auto it = taskmanager.begin(); it != taskmanager.end();){
-      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)) {
+    for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token) && (it->second.resolution == "1080")){
+        it->second.threadcontroll = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token) && (it->second.resolution == "480")){
+        it->second.threadcontroll = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // pthread_cancel(it->second.thread_id);
+        continue;
+      }
+    }
+  }
+
+  if (!usertask.query_type || usertask.ai_type.size()>0)
+  {
+    for (std::map<UserDevice, UserTask>::iterator it = taskmanager.begin(); it != taskmanager.end(); ++it)
+    {
+      if (it->second.token == userdevice.token)
+      {
         ddswriter.query_writer(it->second.username,
                                 it->second.ai_type,
                                 it->second.partition_device,
@@ -67,11 +68,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
                                 it->second.token,
                                 it->second.path,
                                 0);
-        it->second.threadcontroll = false;
-        it++;
       }
-      else
-        ++it;
     }
   }
 }
@@ -134,7 +131,6 @@ int main(int argc, char *argv[]){
     usertask.path = json_obj["path"].get<std::string>();
     usertask.resolution = json_obj["resolution"].get<std::string>();
     usertask.activate = json_obj["activate"].get<bool>();
-    usertask.threadcontroll = true;
 
     if (usertask.partition_device == "Cam003")
       usertask.partition_device = "CAM003";
@@ -142,8 +138,7 @@ int main(int argc, char *argv[]){
     if (userdevice.token == "stopthread") {
       for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
-          pthread_t thread_id = std::hash<std::thread::id>()(it->second.thread_id);
-          pthread_cancel(thread_id);
+          it->second.threadcontroll = false;
           sleep(1);
         }
       continue;
@@ -151,6 +146,7 @@ int main(int argc, char *argv[]){
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
     sleep(1);
+    usertask.threadcontroll = true;
     taskmanager[userdevice] = usertask;
 
 

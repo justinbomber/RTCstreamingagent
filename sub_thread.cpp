@@ -268,10 +268,10 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         // Read VideoStream topic;
         if (resolution == "1080")
         {
+
             // Read VideoStream topic;
             std::thread readerthread(videostream_func);
-            usertask.thread_id = readerthread.get_id();
-            // pthread_cancel(it->second)
+            usertask.thread_id = readerthread.native_handle();
             readerthread.detach();
         }
         else
@@ -280,7 +280,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
 
             // Read VideoStream topic;
             std::thread readerthread(videostream_func);
-            usertask.thread_id = readerthread.get_id();
+            usertask.thread_id = readerthread.native_handle();
             readerthread.detach();
         }
         json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
@@ -301,7 +301,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         {
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         }
-        else if (ai_type.size() == 0 && !query_type) // lung, IPFS Agent
+        else if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
         {
             create_userfolder(path, partition_device, username, rootpath, timestampnow);
 
@@ -328,7 +328,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 std::to_string(timestampnow) + "/" +
                                 path + ".m3u8";
         }                                                                                                            
-        else if (ai_type.size() > 0 && !query_type) // lung, IPFS Agent
+        else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
         {                                                              
             create_userfolder(path, partition_device, username, rootpath, timestampnow);
                                                                        
