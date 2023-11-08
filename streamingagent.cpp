@@ -53,22 +53,19 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
     }
   }
 
-  if (!usertask.query_type || usertask.ai_type.size()>0)
+  for (std::map<UserDevice, UserTask>::iterator it = taskmanager.begin(); it != taskmanager.end(); ++it)
   {
-    for (std::map<UserDevice, UserTask>::iterator it = taskmanager.begin(); it != taskmanager.end(); ++it)
+    if (it->second.token == userdevice.token && (it->second.ai_type.size() > 0 || !it->second.query_type))
     {
-      if (it->second.token == userdevice.token)
-      {
-        ddswriter.query_writer(it->second.username,
-                                it->second.ai_type,
-                                it->second.partition_device,
-                                it->second.query_type,
-                                it->second.starttime,
-                                it->second.endtime,
-                                it->second.token,
-                                it->second.path,
-                                0);
-      }
+      ddswriter.query_writer(it->second.username,
+                              it->second.ai_type,
+                              it->second.partition_device,
+                              it->second.query_type,
+                              it->second.starttime,
+                              it->second.endtime,
+                              it->second.token,
+                              it->second.path,
+                              0);
     }
   }
 }

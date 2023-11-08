@@ -235,7 +235,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     RTSPServerManager rtspservermanager;
     nlohmann::json json_obj;
     // 影片存放根目錄
-    std::string rootpath = "../../vue3-video-play/public/ramdisk";
+    std::string rootpath = "../../dm_front_end/public/ramdisk";
     std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
 
@@ -319,10 +319,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                     if (entry.is_regular_file()) 
                         ++fileexist;
-                if (fileexist > 3)
+                if (fileexist > 0)
                     break;
             }
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+            // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+            json_obj["url"] = "/public/ramdisk/catchoutput/" + 
                                 partition_device + "/" + 
                                 username + "/" +
                                 std::to_string(timestampnow) + "/" +
@@ -346,10 +347,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                     if (entry.is_regular_file()) 
                         ++fileexist;
-                if (fileexist > 3)
+                if (fileexist > 0)
                     break;
             }
-            json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+            // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
+            json_obj["url"] = "/public/ramdisk/catchoutput/" + 
                                 partition_device + "/" + 
                                 username + "/" +
                                 std::to_string(timestampnow) + "/" +
@@ -359,6 +361,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     json_obj["token"] = token;
     json_obj["path"] = path;
     json_obj["type"]= "video";
+    std::cout << json_obj << std::endl;
 
     // 序列化 JSON 對象為字符串
     std::string json_str = json_obj.dump();
