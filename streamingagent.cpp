@@ -128,6 +128,8 @@ int main(int argc, char *argv[]){
     usertask.path = json_obj["path"].get<std::string>();
     usertask.resolution = json_obj["resolution"].get<std::string>();
     usertask.activate = json_obj["activate"].get<bool>();
+    usertask.threadcontroll = true;
+    usertask.timestampnow = std::time(0);
 
     if (usertask.partition_device == "Cam003")
       usertask.partition_device = "CAM003";
@@ -143,7 +145,6 @@ int main(int argc, char *argv[]){
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
     sleep(1);
-    usertask.threadcontroll = true;
     taskmanager[userdevice] = usertask;
 
 

@@ -24,6 +24,7 @@ struct UserTask
   std::string resolution;
   bool activate;
   bool threadcontroll;
+  std::time_t timestampnow;
   // std::thread::id thread_id;
   pthread_t thread_id;
   bool operator==(const UserTask &other) const

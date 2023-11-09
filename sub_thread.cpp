@@ -228,7 +228,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::vector<std::string> ai_type = usertask.ai_type;
     std::string username = usertask.username;
 
-    std::time_t timestampnow = std::time(0);
+    std::time_t timestampnow = usertask.timestampnow;
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
@@ -319,7 +319,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                     if (entry.is_regular_file()) 
                         ++fileexist;
-                if (fileexist > 0)
+                if (fileexist > 2)
                     break;
             }
             // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
@@ -347,7 +347,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                     if (entry.is_regular_file()) 
                         ++fileexist;
-                if (fileexist > 0)
+                if (fileexist > 2)
                     break;
             }
             // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
