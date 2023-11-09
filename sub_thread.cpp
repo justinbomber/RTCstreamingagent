@@ -114,6 +114,8 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                     if (!usertask.threadcontroll)
                         return;
                     const std::string filenameWithoutExt = entry.path().stem().string();
+                    std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
+                    appendToM3U8File(m3u8name, targetFolder, m3u8input);
                     std::string cmdline;
                     if(usertask.resolution == "480") 
                         cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 854x480 " +
@@ -127,8 +129,6 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                                           targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
                     system(cmdline.c_str());
 
-                    std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
-                    appendToM3U8File(m3u8name, targetFolder, m3u8input);
 
                     std::filesystem::remove(entry.path());
                 }
@@ -297,11 +297,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 usertask.token,
                                 usertask.path,
                                 1);
-        if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
-        {
-            json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-        }
-        else if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
+        // if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
+        // {
+            // json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
+        // }
+        if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
         {
             create_userfolder(path, partition_device, username, rootpath, timestampnow);
 
@@ -319,44 +319,44 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                     if (entry.is_regular_file()) 
                         ++fileexist;
-                if (fileexist > 2)
+                if (fileexist > 1)
                     break;
             }
-            // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
-            json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+            json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+            // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
                                 partition_device + "/" + 
                                 username + "/" +
                                 std::to_string(timestampnow) + "/" +
                                 path + ".m3u8";
         }                                                                                                            
-        else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
-        {                                                              
-            create_userfolder(path, partition_device, username, rootpath, timestampnow);
+        // else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
+        // {                                                              
+        //     create_userfolder(path, partition_device, username, rootpath, timestampnow);
                                                                        
-            // Read playh264 topic;                                    
-            std::thread readerthread(playh264_func);                   
-            readerthread.detach();                                     
+        //     // Read playh264 topic;                                    
+        //     std::thread readerthread(playh264_func);                   
+        //     readerthread.detach();                                     
                                                                        
-            // trasfer to 'ts' format for M3U8                         
-            std::thread transthread(transfunc);                        
-            transthread.detach();                                      
+        //     // trasfer to 'ts' format for M3U8                         
+        //     std::thread transthread(transfunc);                        
+        //     transthread.detach();                                      
 
-            int fileexist = 0;
-            while(true){
-                fileexist = 0;
-                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
-                    if (entry.is_regular_file()) 
-                        ++fileexist;
-                if (fileexist > 2)
-                    break;
-            }
-            // json_obj["url"] = "http://" + ipaddr + ":8088/ramdisk/catchoutput/" + 
-            json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                partition_device + "/" + 
-                                username + "/" +
-                                std::to_string(timestampnow) + "/" +
-                                path + ".m3u8";
-        }
+        //     int fileexist = 0;
+        //     while(true){
+        //         fileexist = 0;
+        //         for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+        //             if (entry.is_regular_file()) 
+        //                 ++fileexist;
+        //         if (fileexist > 1)
+        //             break;
+        //     }
+        //     json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+        //     // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+        //                         partition_device + "/" + 
+        //                         username + "/" +
+        //                         std::to_string(timestampnow) + "/" +
+        //                         path + ".m3u8";
+        // }
     }
     json_obj["token"] = token;
     json_obj["path"] = path;
@@ -365,7 +365,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
 
     // 序列化 JSON 對象為字符串
     std::string json_str = json_obj.dump();
-    sleep(1);
+    // sleep(1);
     // return json_str;
     return json_str;
 }

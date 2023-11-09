@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include "commonstruct.h"
 #include "pqxxController.hpp"
+#include <mutex>
 
 // using namespace boost::asio;
 // using namespace boost::beast;
@@ -26,6 +27,7 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
+std::mutex mtx;
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
@@ -92,12 +94,12 @@ int main(int argc, char *argv[]){
   sub_thread sub;
   tcp::resolver resolver(ioc);
   websocket::stream<tcp::socket> ws(ioc);
-  std::cout << "Websocket Server Connection Success !" << std::endl;
-
-  // 連線至websocket server
   auto const results = resolver.resolve("10.1.1.104", "8011");
   auto ep = boost::asio::connect(ws.next_layer(), results);
   ws.handshake("10.1.1.104", "/ddsagent");
+  std::cout << "Websocket Server Connection Success !" << std::endl;
+
+  // 連線至websocket server
   portNumBits udpport = 1250;
   std::string ipaddr = "10.1.1.128";
 
@@ -112,6 +114,19 @@ int main(int argc, char *argv[]){
     std::string received = beast::buffers_to_string(buffer.data());
     std::cout << "Received: " << received << std::endl;
     auto json_obj = nlohmann::json::parse(received);
+    
+    if (json_obj.contains("type")){
+      if (json_obj["type"] == "disconnect"){
+        usertask.token = json_obj["token"].get<std::string>();
+        for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
+        {
+          if (it->first.token == usertask.token){
+            it->second.threadcontroll = false;
+          }
+        }
+        continue;
+      }
+    }
 
     // 設定key
     userdevice.token = json_obj["token"].get<std::string>();
@@ -134,17 +149,17 @@ int main(int argc, char *argv[]){
     if (usertask.partition_device == "Cam003")
       usertask.partition_device = "CAM003";
 
-    if (userdevice.token == "stopthread") {
-      for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
-        {
-          it->second.threadcontroll = false;
-          sleep(1);
-        }
-      continue;
-    }
+    // if (userdevice.token == "stopthread") {
+    //   for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
+    //     {
+    //       it->second.threadcontroll = false;
+    //       sleep(1);
+    //     }
+    //   continue;
+    // }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
     taskmanager[userdevice] = usertask;
 
 
@@ -169,7 +184,7 @@ int main(int argc, char *argv[]){
         ws.write(net::buffer(inifile_text));
         sleep(1);
       }
-      if (usertask.ai_type.size() > 0 && usertask.query_type)
+      if (usertask.ai_type.size() > 0)
         continue;
       else
         ws.write(net::buffer(outputurl));
