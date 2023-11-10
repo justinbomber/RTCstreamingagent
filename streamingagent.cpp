@@ -116,12 +116,22 @@ int main(int argc, char *argv[]){
     auto json_obj = nlohmann::json::parse(received);
     
     if (json_obj.contains("type")){
+      DDSWriter ddswriter;
       if (json_obj["type"] == "disconnect"){
         usertask.token = json_obj["token"].get<std::string>();
         for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
           if (it->first.token == usertask.token){
             it->second.threadcontroll = false;
+            ddswriter.query_writer(it->second.username,
+                              it->second.ai_type,
+                              it->second.partition_device,
+                              it->second.query_type,
+                              it->second.starttime,
+                              it->second.endtime,
+                              it->second.token,
+                              it->second.path,
+                              0);
           }
         }
         continue;
@@ -184,7 +194,7 @@ int main(int argc, char *argv[]){
         ws.write(net::buffer(inifile_text));
         sleep(1);
       }
-      if (usertask.ai_type.size() > 0)
+      if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
         continue;
       else
         ws.write(net::buffer(outputurl));

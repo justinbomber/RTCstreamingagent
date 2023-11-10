@@ -73,7 +73,7 @@ struct VideoStream {
     int32_t frame_bytes;
     std::vector<uint8_t> frame;
 };
-struct PlayH264 {
+struct H2642Ai {
     std::uint8_t query_type;
     std::string source;
     int64_t unix_time;
@@ -85,6 +85,17 @@ struct PlayH264 {
     std::vector<uint8_t> frame;
 };
 
+struct PlayH264 {
+    std::uint8_t query_type;
+    std::string source;
+    int64_t unix_time;
+    int32_t nanoseconds;
+    int16_t format_code;
+    uint8_t flag;
+    uint32_t sequence_number;
+    int32_t frame_bytes;
+    std::vector<uint8_t> frame;
+};
 //Define global map
 extern std::map<UserDevice, UserTask> taskmanager;
 
@@ -97,6 +108,10 @@ extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream;
 // Define paas tp_playh264 topic and qos
 extern dds::domain::DomainParticipant paas_participant;
 extern dds::core::QosProvider paas_qos;
+
+extern const dds::core::xtypes::DynamicType &mytypeH2642Ai;
+extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai;
+
 extern const dds::core::xtypes::DynamicType &mytypePlayH264;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264;
 

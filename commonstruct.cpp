@@ -44,6 +44,9 @@
     // Define paas tp_playh264 topic and qos
     dds::domain::DomainParticipant paas_participant(66);
     dds::core::QosProvider paas_qos("./paasxml/pass_qos.xml");
+    const dds::core::xtypes::DynamicType &mytypeH2642Ai = paas_qos.extensions().type("Paas::Cam::H264Type");
+    dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai(paas_participant, "Tp_H2642Ai", mytypeH2642Ai);
+
     const dds::core::xtypes::DynamicType &mytypePlayH264 = paas_qos.extensions().type("Paas::Cam::PlayH264");
     dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264(paas_participant, "Tp_PlayH264", mytypePlayH264);
 

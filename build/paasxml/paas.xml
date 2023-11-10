@@ -44,6 +44,23 @@
           <member name="has_ai_meta" type="boolean"/>
           <member name="ai_meta" sequenceMaxLength="100" type="nonBasic" nonBasicTypeName= "Paas::Cam::AiMetaType"/>
         </struct>
+        <!-- 2023/11/09 modified by Sam for added H264Type -->
+        <struct name= "H264Type">
+          <member name="query_type" type="byte"/>
+          <member name="tag_objects" type="nonBasic" nonBasicTypeName= "Paas::Cam::TagObjectType" arrayDimensions="10"/>
+          <member name="source" stringMaxLength="63" type="string"/>
+          <member name="partition_device" stringMaxLength="256" type="string" key="true"/>
+          <member name="partition_user" stringMaxLength="100" type="string" key="true"/>
+          <member name="unix_time" type="int64"/>
+          <member name="nanoseconds" type="int32"/>
+          <member name="format_code" type="int16"/>
+          <member name="flag" type="byte"/>
+          <member name="sequence_number" type="uint32"/>
+          <member name="frame_bytes" type="int32"/>
+          <member name="frame" sequenceMaxLength="2097152" type="byte"/>
+          <member name="has_ai_meta" type="boolean"/>
+          <member name="ai_meta" sequenceMaxLength="100" type="nonBasic" nonBasicTypeName= "Paas::Cam::AiMetaType"/>
+        </struct>
         <!-- 2023/10/16 modified by lunglin for 1.key fields 2. activate field added -->
         <!-- 2023/11/07 modified by Sam for 1. token & path field added -->
         <struct name= "Query">

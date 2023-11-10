@@ -255,6 +255,10 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                    std::ref(usertask),
                                    catchinput,
                                    udpport);
+    auto h2642ai_func = std::bind(&DDSReader::h2642ai_reader, &ddsreader,
+                                   std::ref(usertask),
+                                   catchinput,
+                                   udpport);
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
                                     serverport, udpport, 
@@ -297,10 +301,10 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 usertask.token,
                                 usertask.path,
                                 1);
-        // if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
-        // {
-            // json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-        // }
+        if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
+        {
+            json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
+        }
         if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
         {
             create_userfolder(path, partition_device, username, rootpath, timestampnow);
@@ -329,34 +333,34 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 std::to_string(timestampnow) + "/" +
                                 path + ".m3u8";
         }                                                                                                            
-        // else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
-        // {                                                              
-        //     create_userfolder(path, partition_device, username, rootpath, timestampnow);
+        else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
+        {                                                              
+            create_userfolder(path, partition_device, username, rootpath, timestampnow);
                                                                        
-        //     // Read playh264 topic;                                    
-        //     std::thread readerthread(playh264_func);                   
-        //     readerthread.detach();                                     
+            // Read playh264 topic;                                    
+            std::thread readerthread(h2642ai_func);                   
+            readerthread.detach();                                     
                                                                        
-        //     // trasfer to 'ts' format for M3U8                         
-        //     std::thread transthread(transfunc);                        
-        //     transthread.detach();                                      
+            // trasfer to 'ts' format for M3U8                         
+            std::thread transthread(transfunc);                        
+            transthread.detach();                                      
 
-        //     int fileexist = 0;
-        //     while(true){
-        //         fileexist = 0;
-        //         for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
-        //             if (entry.is_regular_file()) 
-        //                 ++fileexist;
-        //         if (fileexist > 1)
-        //             break;
-        //     }
-        //     json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-        //     // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-        //                         partition_device + "/" + 
-        //                         username + "/" +
-        //                         std::to_string(timestampnow) + "/" +
-        //                         path + ".m3u8";
-        // }
+            int fileexist = 0;
+            while(true){
+                fileexist = 0;
+                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+                    if (entry.is_regular_file()) 
+                        ++fileexist;
+                if (fileexist > 1)
+                    break;
+            }
+            json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+            // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+                                partition_device + "/" + 
+                                username + "/" +
+                                std::to_string(timestampnow) + "/" +
+                                path + ".m3u8";
+        }
     }
     json_obj["token"] = token;
     json_obj["path"] = path;

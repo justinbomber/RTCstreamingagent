@@ -139,6 +139,104 @@ void DDSReader::videostream_reader(UserTask &usertask,
             }
         }
     }
+    if (!usertask.threadcontroll)
+        return;
+}
+
+void DDSReader::h2642ai_reader(UserTask &usertask,
+                                std::string filepath,
+                                std::uint64_t port)
+{
+    int sock;
+    struct sockaddr_in addr;
+    const char *multicast_ip = "239.255.42.42";
+    std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
+
+    // create socket connection
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        perror("socket() failed");
+        return;
+    }
+
+    // initialize
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(multicast_ip);
+    addr.sin_port = htons(port);
+
+    // Set partition
+    std::string partition = usertask.partition_device + "/" + usertask.username;
+    dds::sub::Subscriber sub(paas_participant);
+    dds::sub::qos::SubscriberQos subQos = sub.qos();
+    auto &curPartition = subQos.policy<dds::core::policy::Partition>();
+    std::vector<std::string> partitionNames = curPartition.name();
+    partitionNames.push_back(partition);
+    curPartition.name(partitionNames);
+    sub.qos(subQos << curPartition);
+
+    // Create the DataReader
+    dds::sub::DataReader<dds::core::xtypes::DynamicData> reader(sub, topicH2642Ai);
+
+    int count = -1;
+    std::vector<uint8_t> bodyframebuf = {};
+    std::vector<uint8_t> headframebuf = {};
+
+    // Read the data sample
+    while (usertask.threadcontroll)
+    {
+        // Read/take samples normally
+        dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
+        for (auto sample : samples)
+        {
+            if (sample.info().valid())
+            {
+                if (!usertask.threadcontroll)
+                    return;
+
+                H2642Ai h2642Ai;
+                dds::core::xtypes::DynamicData &data = const_cast<dds::core::xtypes::DynamicData &>(sample.data());
+                h2642Ai.query_type = data.value<std::uint8_t>("query_type");
+                h2642Ai.source = data.value<std::string>("source");
+                h2642Ai.unix_time = data.value<int64_t>("unix_time");
+                h2642Ai.nanoseconds = data.value<int32_t>("nanoseconds");
+                h2642Ai.format_code = data.value<int16_t>("format_code");
+                h2642Ai.flag = data.value<uint8_t>("flag");
+                h2642Ai.sequence_number = data.value<uint32_t>("sequence_number");
+                h2642Ai.frame_bytes = data.value<int32_t>("frame_bytes");
+                h2642Ai.frame = data.get_values<uint8_t>("frame");
+
+                if (usertask.ai_type.size() > 0 && usertask.query_type)
+                    sendLargeData(sock, h2642Ai.frame.data(), h2642Ai.frame.size(), addr);
+                else
+                {
+                    if (h2642Ai.flag == 1)
+                    {
+                        if (count == -1)
+                        {
+                            count++;
+                            headframebuf = {};
+                            bodyframebuf = {};
+                            headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
+                            continue;
+                        }
+                        headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
+                        saveAsH264File(headframebuf, count, filepath);
+                        headframebuf = {};
+                        bodyframebuf = {};
+                        headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
+                        count++;
+                    }
+                    else
+                    {
+                        bodyframebuf.insert(bodyframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
+                    }
+                }
+            }
+        }
+    }
+    if (!usertask.threadcontroll)
+        return;
 }
 
 void DDSReader::playh264_reader(UserTask &usertask,
@@ -190,54 +288,49 @@ void DDSReader::playh264_reader(UserTask &usertask,
             if (sample.info().valid())
             {
                 if (!usertask.threadcontroll)
-                {
-                    DDSWriter ddswriter;
                     return;
-                }
-                PlayH264 playH264;
+                
+                PlayH264 playh264;
                 dds::core::xtypes::DynamicData &data = const_cast<dds::core::xtypes::DynamicData &>(sample.data());
-                playH264.query_type = data.value<std::uint8_t>("query_type");
-                playH264.source = data.value<std::string>("source");
-                playH264.unix_time = data.value<int64_t>("unix_time");
-                playH264.nanoseconds = data.value<int32_t>("nanoseconds");
-                playH264.format_code = data.value<int16_t>("format_code");
-                playH264.flag = data.value<uint8_t>("flag");
-                playH264.sequence_number = data.value<uint32_t>("sequence_number");
-                playH264.frame_bytes = data.value<int32_t>("frame_bytes");
-                playH264.frame = data.get_values<uint8_t>("frame");
+                playh264.query_type = data.value<std::uint8_t>("query_type");
+                playh264.source = data.value<std::string>("source");
+                playh264.unix_time = data.value<int64_t>("unix_time");
+                playh264.nanoseconds = data.value<int32_t>("nanoseconds");
+                playh264.format_code = data.value<int16_t>("format_code");
+                playh264.flag = data.value<uint8_t>("flag");
+                playh264.sequence_number = data.value<uint32_t>("sequence_number");
+                playh264.frame_bytes = data.value<int32_t>("frame_bytes");
+                playh264.frame = data.get_values<uint8_t>("frame");
 
                 if (usertask.ai_type.size() > 0 && usertask.query_type)
-                    sendLargeData(sock, playH264.frame.data(), playH264.frame.size(), addr);
+                    sendLargeData(sock, playh264.frame.data(), playh264.frame.size(), addr);
                 else
                 {
-                    if (playH264.flag == 1)
+                    if (playh264.flag == 1)
                     {
                         if (count == -1)
                         {
                             count++;
                             headframebuf = {};
                             bodyframebuf = {};
-                            headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
+                            headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
                             continue;
                         }
                         headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
                         saveAsH264File(headframebuf, count, filepath);
                         headframebuf = {};
                         bodyframebuf = {};
-                        headframebuf.insert(headframebuf.end(), playH264.frame.begin(), playH264.frame.end());
+                        headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
                         count++;
                     }
                     else
                     {
-                        bodyframebuf.insert(bodyframebuf.end(), playH264.frame.begin(), playH264.frame.end());
+                        bodyframebuf.insert(bodyframebuf.end(), playh264.frame.begin(), playh264.frame.end());
                     }
                 }
             }
         }
     }
     if (!usertask.threadcontroll)
-    {
-        DDSWriter ddswriter;
         return;
-    }
 }
