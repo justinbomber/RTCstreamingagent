@@ -60,6 +60,35 @@ void appendToM3U8File(std::string m3u8name, const std::string &directory, const 
     outFile.close();
 }
 
+bool checkmetadata(std::string source, int startTime, int endTime){
+    PostgresConnector postgresConnector;
+    bool isOpen = postgresConnector.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433);
+
+    if (isOpen)
+        std::cout << "Opened database successfully." << std::endl;
+    else
+        std::cout << "Database cannot be opened." << std::endl;
+
+    std::string command =
+            "select content_id, file_name, has_pre_ai from "
+            "tb_cam_ipfs_controller_meta"
+            " where source = '" +
+            source + "' and unix_time_end > " + std::to_string(startTime) +
+            " and unix_time_start < " + std::to_string(endTime) +
+            " and status = '5'" +
+            " order by source, unix_time_start, unix_time_end";
+    pqxx::result ipfsRows = postgresConnector.executeResultset(command);
+    int count = 0;
+    bool closedb = postgresConnector.close();
+    for (auto const &row : ipfsRows)
+        count++;
+
+    if(count > 0)
+        return true;
+    else
+        return false;
+}
+
 void transferH264(const std::string &targetFolder, UserTask &usertask, std::string m3u8name, const std::string &inputfolder)
 {
     int should_out = 0;
@@ -218,6 +247,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                         portNumBits udpport,
                                         std::string ipaddr)
 {
+
     std::string path = usertask.path;
     std::string token = usertask.token;
     std::string partition_device = usertask.partition_device;
@@ -317,21 +347,26 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             std::thread transthread(transfunc);
             transthread.detach();
             
-            int fileexist = 0;
-            while(true){
-                fileexist = 0;
-                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
-                    if (entry.is_regular_file()) 
-                        ++fileexist;
-                if (fileexist > 1)
-                    break;
+            if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
+                int fileexist = 0;
+                while(true){
+                    fileexist = 0;
+                    for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+                        if (entry.is_regular_file()) 
+                            ++fileexist;
+                    if (fileexist > 1)
+                        break;
+                }
+                json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+                // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+                                    partition_device + "/" + 
+                                    username + "/" +
+                                    std::to_string(timestampnow) + "/" +
+                                    path + ".m3u8";
+            } else {
+                json_obj["url"] = "None";
             }
-            json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-            // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                partition_device + "/" + 
-                                username + "/" +
-                                std::to_string(timestampnow) + "/" +
-                                path + ".m3u8";
+            
         }                                                                                                            
         else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
         {                                                              
@@ -345,21 +380,25 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             std::thread transthread(transfunc);                        
             transthread.detach();                                      
 
-            int fileexist = 0;
-            while(true){
-                fileexist = 0;
-                for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
-                    if (entry.is_regular_file()) 
-                        ++fileexist;
-                if (fileexist > 1)
-                    break;
+            if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
+                int fileexist = 0;
+                while(true){
+                    fileexist = 0;
+                    for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
+                        if (entry.is_regular_file()) 
+                            ++fileexist;
+                    if (fileexist > 1)
+                        break;
+                }
+                json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+                // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+                                    partition_device + "/" + 
+                                    username + "/" +
+                                    std::to_string(timestampnow) + "/" +
+                                    path + ".m3u8";
+            } else {
+                json_obj["url"] = "None";
             }
-            json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-            // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                partition_device + "/" + 
-                                username + "/" +
-                                std::to_string(timestampnow) + "/" +
-                                path + ".m3u8";
         }
     }
     json_obj["token"] = token;

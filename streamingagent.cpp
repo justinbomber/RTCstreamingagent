@@ -156,8 +156,8 @@ int main(int argc, char *argv[]){
     usertask.threadcontroll = true;
     usertask.timestampnow = std::time(0);
 
-    if (usertask.partition_device == "Cam003")
-      usertask.partition_device = "CAM003";
+    // if (usertask.partition_device == "Cam003")
+    //   usertask.partition_device = "CAM003";
 
     // if (userdevice.token == "stopthread") {
     //   for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
