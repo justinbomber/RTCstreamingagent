@@ -80,8 +80,9 @@ bool checkmetadata(std::string source, int startTime, int endTime){
     pqxx::result ipfsRows = postgresConnector.executeResultset(command);
     int count = 0;
     bool closedb = postgresConnector.close();
-    for (auto const &row : ipfsRows)
+    for (auto const &row : ipfsRows){
         count++;
+    }
 
     if(count > 0)
         return true;
@@ -106,31 +107,31 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
             traffic_status = 2;
         else
             traffic_status = 1;
-        if(traffic_status != last_taraffic_status)
-        {
-            if (traffic_status == 2)
-                ddswriter.query_writer(usertask.username, 
-                                        usertask.ai_type, 
-                                        usertask.partition_device, 
-                                        usertask.query_type, 
-                                        usertask.starttime, 
-                                        usertask.endtime, 
-                                        usertask.token,
-                                        usertask.path,
-                                        2);
-            else
-                ddswriter.query_writer(usertask.username, 
-                                        usertask.ai_type, 
-                                        usertask.partition_device, 
-                                        usertask.query_type, 
-                                        usertask.starttime, 
-                                        usertask.endtime,
-                                        usertask.token,
-                                        usertask.path,
-                                        1);
+        // if(traffic_status != last_taraffic_status)
+        // {
+        //     if (traffic_status == 2)
+        //         ddswriter.query_writer(usertask.username, 
+        //                                 usertask.ai_type, 
+        //                                 usertask.partition_device, 
+        //                                 usertask.query_type, 
+        //                                 usertask.starttime, 
+        //                                 usertask.endtime, 
+        //                                 usertask.token,
+        //                                 usertask.path,
+        //                                 2);
+        //     else
+        //         ddswriter.query_writer(usertask.username, 
+        //                                 usertask.ai_type, 
+        //                                 usertask.partition_device, 
+        //                                 usertask.query_type, 
+        //                                 usertask.starttime, 
+        //                                 usertask.endtime,
+        //                                 usertask.token,
+        //                                 usertask.path,
+        //                                 1);
 
-            last_taraffic_status = traffic_status;
-        }
+        //     last_taraffic_status = traffic_status;
+        // }
 
         for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
         {
@@ -163,10 +164,6 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                 }
             }
         }
-        // if(file_count == 0)
-        //     should_out++;
-        // if(should_out > 100)
-        //     return;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
@@ -337,17 +334,16 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         }
         if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
         {
-            create_userfolder(path, partition_device, username, rootpath, timestampnow);
-
-            // Read playh264 topic;
-            std::thread readerthread(playh264_func);
-            readerthread.detach();
-
-            // trasfer to 'ts' format for M3U8
-            std::thread transthread(transfunc);
-            transthread.detach();
-            
             if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
+                create_userfolder(path, partition_device, username, rootpath, timestampnow);
+
+                // Read playh264 topic;
+                std::thread readerthread(playh264_func);
+                readerthread.detach();
+
+                // trasfer to 'ts' format for M3U8
+                std::thread transthread(transfunc);
+                transthread.detach();
                 int fileexist = 0;
                 while(true){
                     fileexist = 0;
@@ -370,17 +366,18 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         }                                                                                                            
         else if (ai_type.size() > 0 && !query_type) // Sam, IPFS Agent
         {                                                              
-            create_userfolder(path, partition_device, username, rootpath, timestampnow);
-                                                                       
-            // Read playh264 topic;                                    
-            std::thread readerthread(h2642ai_func);                   
-            readerthread.detach();                                     
-                                                                       
-            // trasfer to 'ts' format for M3U8                         
-            std::thread transthread(transfunc);                        
-            transthread.detach();                                      
+                                       
 
             if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
+                create_userfolder(path, partition_device, username, rootpath, timestampnow);
+                                                                        
+                // Read playh264 topic;                                    
+                std::thread readerthread(h2642ai_func);                   
+                readerthread.detach();                                     
+                                                                        
+                // trasfer to 'ts' format for M3U8                         
+                std::thread transthread(transfunc);                        
+                transthread.detach();           
                 int fileexist = 0;
                 while(true){
                     fileexist = 0;

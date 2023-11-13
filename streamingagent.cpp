@@ -46,12 +46,6 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
         it->second.threadcontroll = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
-      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token) && (it->second.resolution == "480")){
-        it->second.threadcontroll = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        // pthread_cancel(it->second.thread_id);
-        continue;
-      }
     }
   }
 
@@ -141,6 +135,7 @@ int main(int argc, char *argv[]){
     // 設定key
     userdevice.token = json_obj["token"].get<std::string>();
     userdevice.partition_device = json_obj["partition_device"].get<std::string>();
+    userdevice.timestampnow = std::time(0);
 
     // 設定value
     usertask.token = json_obj["token"].get<std::string>();
@@ -154,25 +149,11 @@ int main(int argc, char *argv[]){
     usertask.resolution = json_obj["resolution"].get<std::string>();
     usertask.activate = json_obj["activate"].get<bool>();
     usertask.threadcontroll = true;
-    usertask.timestampnow = std::time(0);
-
-    // if (usertask.partition_device == "Cam003")
-    //   usertask.partition_device = "CAM003";
-
-    // if (userdevice.token == "stopthread") {
-    //   for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
-    //     {
-    //       it->second.threadcontroll = false;
-    //       sleep(1);
-    //     }
-    //   continue;
-    // }
+    usertask.timestampnow = userdevice.timestampnow;
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     taskmanager[userdevice] = usertask;
-
-
 
     if (!usertask.path.empty())
     {

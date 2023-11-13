@@ -48,6 +48,7 @@ struct UserDevice
 {
   std::string token;
   std::string partition_device;
+  std::time_t timestampnow;
   bool operator<(const UserDevice &other) const
   {
     if (token < other.token)
@@ -58,7 +59,9 @@ struct UserDevice
   }
     bool operator==(const UserDevice &other) const
   {
-    return token == other.token && partition_device == other.partition_device;
+    return token == other.token && 
+    partition_device == other.partition_device &&
+    timestampnow == other.timestampnow;
   }
 };
 struct VideoStream {
