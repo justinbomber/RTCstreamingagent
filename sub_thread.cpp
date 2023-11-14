@@ -346,7 +346,23 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 std::thread transthread(transfunc);
                 transthread.detach();
                 int fileexist = 0;
+                auto start = std::chrono::steady_clock::now();
                 while(true){
+                    auto now = std::chrono::steady_clock::now();
+                    if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
+                    {
+                        usertask.threadcontroll = false;
+                        json_obj["url"] = "None";
+                        break;
+                    } else{
+
+                        json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+                        // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+                                            partition_device + "/" + 
+                                            username + "/" +
+                                            std::to_string(timestampnow) + "/" +
+                                            path + ".m3u8";
+                    }
                     fileexist = 0;
                     for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                         if (entry.is_regular_file()) 
@@ -354,12 +370,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                     if (fileexist > 1)
                         break;
                 }
-                json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-                // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                    partition_device + "/" + 
-                                    username + "/" +
-                                    std::to_string(timestampnow) + "/" +
-                                    path + ".m3u8";
             } else {
                 json_obj["url"] = "None";
             }
@@ -379,8 +389,24 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                 // trasfer to 'ts' format for M3U8                         
                 std::thread transthread(transfunc);                        
                 transthread.detach();           
+                auto start = std::chrono::steady_clock::now();
                 int fileexist = 0;
                 while(true){
+                    auto now = std::chrono::steady_clock::now();
+                    if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
+                    {
+                        usertask.threadcontroll = false;
+                        json_obj["url"] = "None";
+                        break;
+                    } else{
+
+                        json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
+                        // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
+                                            partition_device + "/" + 
+                                            username + "/" +
+                                            std::to_string(timestampnow) + "/" +
+                                            path + ".m3u8";
+                    }
                     fileexist = 0;
                     for (const auto& entry : std::filesystem::directory_iterator(catchoutput))
                         if (entry.is_regular_file()) 
@@ -388,12 +414,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                     if (fileexist > 1)
                         break;
                 }
-                json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-                // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                    partition_device + "/" + 
-                                    username + "/" +
-                                    std::to_string(timestampnow) + "/" +
-                                    path + ".m3u8";
             } else {
                 json_obj["url"] = "None";
             }
