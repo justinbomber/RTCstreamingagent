@@ -14,6 +14,7 @@
 #include "commonstruct.h"
 #include "pqxxController.hpp"
 #include <mutex>
+#include "appConfig.h"
 
 // using namespace boost::asio;
 // using namespace boost::beast;
@@ -28,6 +29,8 @@ using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
 std::mutex mtx;
+
+CommonStruct commonstruct;
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
@@ -37,12 +40,12 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
     for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
       if (it->first.token == userdevice.token){
         it->second.threadcontroll = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
     }
   } else if (usertask.resolution == "480"){
     for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
-      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token) && (it->second.resolution == "1080")){
+      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)){
         it->second.threadcontroll = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
@@ -74,7 +77,6 @@ void signalHandler(int signum)
     it->second.threadcontroll = false;
   }
   std::cout << "Capture \'Ctrl+C\' signal(" << signum << "), exiting..." << std::endl;
-  sleep(5);
   exit(signum);
 }
 
@@ -88,18 +90,17 @@ int main(int argc, char *argv[]){
   sub_thread sub;
   tcp::resolver resolver(ioc);
   websocket::stream<tcp::socket> ws(ioc);
-  auto const results = resolver.resolve("10.1.1.104", "8011");
+  auto const results = resolver.resolve(commonstruct.websocketip, commonstruct.websocketport);
   auto ep = boost::asio::connect(ws.next_layer(), results);
-  ws.handshake("10.1.1.104", "/ddsagent");
+  ws.handshake(commonstruct.websocketip, "/" + commonstruct.websocketpath);
   std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
-  portNumBits udpport = 1250;
-  std::string ipaddr = "10.1.1.128";
+  std::string ipaddr = commonstruct.local_serverip;
 
   while (true)
   {
-    udpport++;
+    commonstruct.local_udpport++;
     UserDevice userdevice;
     UserTask usertask;
     // 收到client request
@@ -159,7 +160,11 @@ int main(int argc, char *argv[]){
     {
       sub_thread instance;
       std::string outputurl;
-      outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]), udpport, ipaddr);
+      outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]), 
+                  commonstruct.local_udpport, 
+                  commonstruct.local_udpip, 
+                  ipaddr, 
+                  commonstruct.local_rootpath);
       if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
         boost::property_tree::ptree jsonObject;
         pqxxController pqc1;

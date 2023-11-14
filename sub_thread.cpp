@@ -242,7 +242,9 @@ void create_userfolder(std::string path, std::string partition_device, std::stri
 
 std::string sub_thread::sub_thread_task(UserTask & usertask, 
                                         portNumBits udpport,
-                                        std::string ipaddr)
+                                        std::string udpip,
+                                        std::string ipaddr,
+                                        std::string rootpath)
 {
 
     std::string path = usertask.path;
@@ -262,7 +264,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     RTSPServerManager rtspservermanager;
     nlohmann::json json_obj;
     // 影片存放根目錄
-    std::string rootpath = "../../dm_front_end/public/ramdisk";
     std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
 
@@ -288,7 +289,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                    udpport);
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
-                                    serverport, udpport, 
+                                    serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport);
     if (ai_type.size() == 0 && query_type)

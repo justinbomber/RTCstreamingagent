@@ -18,6 +18,7 @@ public:
 
   void startserver(const int serverport, 
                    portNumBits const udpport, 
+                   const std::string udpip,
                    const std::string urlname,
                    portNumBits const httptunnelingport);
                   //  bool &threadcontroll);

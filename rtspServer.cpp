@@ -10,6 +10,7 @@ RTSPServerManager::~RTSPServerManager() {
 // TODO : need control to stop server
 void RTSPServerManager::startserver(const int serverport, 
                                     portNumBits const udpport, 
+                                    const std::string udpip,
                                     const std::string urlname,
                                     portNumBits const httptunnelingport)
                                     {
@@ -29,7 +30,7 @@ void RTSPServerManager::startserver(const int serverport,
 
   char const* descriptionString = "Session streamed by \"testOnDemandRTSPServer\"";
   char const* streamName = urlname.c_str();
-  char const* inputAddressStr = "239.255.42.42";
+  char const* inputAddressStr = udpip.c_str();
   portNumBits const inputPortNum = udpport;
 
   ServerMediaSession* sms

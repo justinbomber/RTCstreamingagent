@@ -96,7 +96,6 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     std::vector<uint8_t> frame264;
     auto start = std::chrono::steady_clock::now();
-    bool dataSent = false;
 
     bool GotKeyFrame = false;
 
@@ -105,7 +104,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
         auto now = std::chrono::steady_clock::now();
-        if (dataSent && std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 10)
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
         }
@@ -144,7 +143,6 @@ void DDSReader::videostream_reader(UserTask &usertask,
                     frame264 = videoStream.frame;
                 }
                 sendLargeData(sock, frame264.data(), frame264.size(), addr);
-                dataSent = true;
                 start = std::chrono::steady_clock::now();
             }
         }
@@ -193,7 +191,6 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     std::vector<uint8_t> headframebuf = {};
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
-    bool dataSent = false;
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -201,10 +198,9 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
         auto now = std::chrono::steady_clock::now();
-        if (dataSent && std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
-            // return;
         }
         for (auto sample : samples)
         {
@@ -256,7 +252,6 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                     {
                         bodyframebuf.insert(bodyframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
                     }
-                    dataSent = true;
                     start = std::chrono::steady_clock::now();
                 }
             }
@@ -306,7 +301,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
     std::vector<uint8_t> headframebuf = {};
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
-    bool dataSent = false;
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -314,10 +308,9 @@ void DDSReader::playh264_reader(UserTask &usertask,
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
         auto now = std::chrono::steady_clock::now();
-        if (dataSent && std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
-            // return;
         }
         for (auto sample : samples)
         {
@@ -369,7 +362,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
                     {
                         bodyframebuf.insert(bodyframebuf.end(), playh264.frame.begin(), playh264.frame.end());
                     }
-                    dataSent = true;
                     start = std::chrono::steady_clock::now();
                 }
             }

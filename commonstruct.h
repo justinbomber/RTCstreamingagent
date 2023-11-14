@@ -8,6 +8,7 @@
 #include <map>
 #include <atomic>
 #include "appConfig.h"
+#include "liveMedia.hh"
 #include <thread>
 
 // void initialize();
@@ -87,7 +88,6 @@ struct H2642Ai {
     int32_t frame_bytes;
     std::vector<uint8_t> frame;
 };
-
 struct PlayH264 {
     std::uint8_t query_type;
     std::string source;
@@ -99,6 +99,41 @@ struct PlayH264 {
     int32_t frame_bytes;
     std::vector<uint8_t> frame;
 };
+
+
+class CommonStruct{
+
+  public:
+    CommonStruct();
+
+    //Define global map
+    // std::map<UserDevice, UserTask> taskmanager;
+
+    std::string postgreshost;
+    int postgresport;
+    std::string postgresuser;
+    std::string postgrespassword;
+    std::string postgresdb;
+
+    std::string websocketip;
+    std::string websocketport;
+    std::string websocketpath;
+
+    std::string ddscam_qos_path;
+    std::string ddscam_typedef_path;
+
+    std::string paas_qos_path;
+    std::string paas_typedef_path;
+
+    std::string local_serverip;
+    std::string local_rootpath;
+    std::int32_t local_domainid;
+    std::string local_udpip;
+    portNumBits local_udpport;
+
+};
+
+extern CommonStruct commonstruct;
 //Define global map
 extern std::map<UserDevice, UserTask> taskmanager;
 
@@ -108,10 +143,9 @@ extern dds::core::QosProvider ddscam_qos;
 extern const dds::core::xtypes::DynamicType &mytypeVideoStream;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream;
 
-// Define paas tp_playh264 topic and qos
+ // Define paas tp_playh264 topic and qos
 extern dds::domain::DomainParticipant paas_participant;
 extern dds::core::QosProvider paas_qos;
-
 extern const dds::core::xtypes::DynamicType &mytypeH2642Ai;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai;
 
@@ -121,26 +155,5 @@ extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264;
 extern const dds::core::xtypes::DynamicType &mytype;
 extern dds::topic::Topic<dds::core::xtypes::DynamicData> topicQuery;
 
-// extern std::string postgreshost;
-// extern int postgresport;
-// extern std::string postgresuser;
-// extern std::string postgrespassword;
-// extern std::string postgresdb;
-
-// extern std::string websocketip;
-// extern int websocketport;
-// extern std::string websocketpath;
-
-// extern std::string ddscam_qos;
-// extern std::string ddscam_typedef;
-
-// extern std::string paas_qos;
-// extern std::string paas_typedef;
-
-// extern std::string local_serverip;
-// extern std::string local_rootpath;
-// extern int local_domainid;
-// extern std::string local_udpip;
-// extern int local_udpport;
 
 #endif // COMMONSTRUCT_H
