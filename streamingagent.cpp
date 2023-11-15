@@ -34,37 +34,10 @@ CommonStruct commonstruct;
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
-  DDSWriter ddswriter;
-  std::cout << "in resort map" << std::endl;
-  if (usertask.resolution == "1080"){
-    for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
-      if (it->first.token == userdevice.token){
-        it->second.threadcontroll = false;
-        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      }
-    }
-  } else if (usertask.resolution == "480"){
-    for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
-      if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token)){
-        it->second.threadcontroll = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      }
-    }
-  }
-
-  for (std::map<UserDevice, UserTask>::iterator it = taskmanager.begin(); it != taskmanager.end(); ++it)
-  {
-    if (it->second.token == userdevice.token && (it->second.ai_type.size() > 0 || !it->second.query_type))
-    {
-      ddswriter.query_writer(it->second.username,
-                              it->second.ai_type,
-                              it->second.partition_device,
-                              it->second.query_type,
-                              it->second.starttime,
-                              it->second.endtime,
-                              it->second.token,
-                              it->second.path,
-                              0);
+  for (auto it = taskmanager.begin(); it != taskmanager.end(); ++it){
+    if (it->first.partition_device == userdevice.partition_device){
+      it->second.threadcontroll = false;
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
   }
 }
@@ -110,47 +83,16 @@ int main(int argc, char *argv[]){
     std::cout << "Received: " << received << std::endl;
     auto json_obj = nlohmann::json::parse(received);
     
-    if (json_obj.contains("type")){
-      DDSWriter ddswriter;
-      if (json_obj["type"] == "disconnect"){
-        usertask.token = json_obj["token"].get<std::string>();
-        for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
-        {
-          if (it->first.token == usertask.token){
-            it->second.threadcontroll = false;
-            ddswriter.query_writer(it->second.username,
-                              it->second.ai_type,
-                              it->second.partition_device,
-                              it->second.query_type,
-                              it->second.starttime,
-                              it->second.endtime,
-                              it->second.token,
-                              it->second.path,
-                              0);
-          }
-        }
-        continue;
-      }
-    }
-
-
     try {
       // 設定key
-      userdevice.token = json_obj["token"].get<std::string>();
       userdevice.partition_device = json_obj["partition_device"].get<std::string>();
       userdevice.timestampnow = std::time(0);
 
       // 設定value
       usertask.token = json_obj["token"].get<std::string>();
       usertask.username = json_obj["username"].get<std::string>();
-      usertask.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
       usertask.partition_device = json_obj["partition_device"].get<std::string>();
-      usertask.query_type = json_obj["query_type"].get<std::int8_t>();
-      usertask.starttime = json_obj["starttime"].get<std::int64_t>();
-      usertask.endtime = json_obj["endtime"].get<std::int64_t>();
       usertask.path = json_obj["path"].get<std::string>();
-      usertask.resolution = json_obj["resolution"].get<std::string>();
-      usertask.activate = json_obj["activate"].get<bool>();
       usertask.threadcontroll = true;
       usertask.timestampnow = userdevice.timestampnow;
     } catch (std::exception& e) {
@@ -163,7 +105,7 @@ int main(int argc, char *argv[]){
       ws.write(net::buffer(inifile_text));
     }
 
-    resortmap(userdevice, usertask, std::ref(taskmanager));
+    resortmap(userdevice, usertask, taskmanager);
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     taskmanager[userdevice] = usertask;
 
@@ -176,25 +118,7 @@ int main(int argc, char *argv[]){
                   commonstruct.local_udpip, 
                   ipaddr, 
                   commonstruct.local_rootpath);
-      if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
-        boost::property_tree::ptree jsonObject;
-        pqxxController pqc1;
-        std::string *ai_type_array = &usertask.ai_type[0];
-        jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device, 
-                                                      usertask.starttime, 
-                                                      usertask.endtime, ai_type_array,
-                                                      usertask.ai_type.size());
-        jsonObject.put("token", usertask.token);
-        jsonObject.put("type", "ai_time");
-
-        std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-        ws.write(net::buffer(inifile_text));
-        sleep(1);
-      }
-      if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
-        continue;
-      else
-        ws.write(net::buffer(outputurl));
+      ws.write(net::buffer(outputurl));
     }
   }
   ws.close(websocket::close_code::normal);

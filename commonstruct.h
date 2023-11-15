@@ -17,29 +17,16 @@ struct UserTask
   std::string token;
   std::string username;
   std::string path;
-  std::vector<std::string> ai_type;
   std::string partition_device;
-  bool query_type;
-  std::int64_t starttime;
-  std::int64_t endtime;
-  std::string resolution;
-  bool activate;
   bool threadcontroll;
   std::time_t timestampnow;
   // std::thread::id thread_id;
-  pthread_t thread_id;
   bool operator==(const UserTask &other) const
   {
     return token == other.token
         && username == other.username
         && path == other.path
-        && ai_type == other.ai_type
         && partition_device == other.partition_device
-        && query_type == other.query_type
-        && starttime == other.starttime
-        && endtime == other.endtime
-        && resolution == other.resolution
-        && activate == other.activate
         && threadcontroll == other.threadcontroll
         && token == other.token
         && path == other.path;
@@ -47,21 +34,15 @@ struct UserTask
 };
 struct UserDevice
 {
-  std::string token;
   std::string partition_device;
   std::time_t timestampnow;
   bool operator<(const UserDevice &other) const
   {
-    if (token < other.token)
-      return true;
-    if (token > other.token)
-      return false;
     return partition_device < other.partition_device;
   }
     bool operator==(const UserDevice &other) const
   {
-    return token == other.token && 
-    partition_device == other.partition_device &&
+    return partition_device == other.partition_device &&
     timestampnow == other.timestampnow;
   }
 };

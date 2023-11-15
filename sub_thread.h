@@ -40,10 +40,6 @@ public:
                                 std::string udpip,
                                 std::string ipaddr,
                                 std::string rootpath);
-    pqxx::result searchdatabase(const std::string & tablename,
-                                const std::string & source,
-                                const std::int64_t & starttime,
-                                const std::int64_t & endtime);
 };
 
 #endif // YOURCLASS_H
