@@ -133,24 +133,35 @@ int main(int argc, char *argv[]){
       }
     }
 
-    // 設定key
-    userdevice.token = json_obj["token"].get<std::string>();
-    userdevice.partition_device = json_obj["partition_device"].get<std::string>();
-    userdevice.timestampnow = std::time(0);
 
-    // 設定value
-    usertask.token = json_obj["token"].get<std::string>();
-    usertask.username = json_obj["username"].get<std::string>();
-    usertask.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
-    usertask.partition_device = json_obj["partition_device"].get<std::string>();
-    usertask.query_type = json_obj["query_type"].get<std::int8_t>();
-    usertask.starttime = json_obj["starttime"].get<std::int64_t>();
-    usertask.endtime = json_obj["endtime"].get<std::int64_t>();
-    usertask.path = json_obj["path"].get<std::string>();
-    usertask.resolution = json_obj["resolution"].get<std::string>();
-    usertask.activate = json_obj["activate"].get<bool>();
-    usertask.threadcontroll = true;
-    usertask.timestampnow = userdevice.timestampnow;
+    try {
+      // 設定key
+      userdevice.token = json_obj["token"].get<std::string>();
+      userdevice.partition_device = json_obj["partition_device"].get<std::string>();
+      userdevice.timestampnow = std::time(0);
+
+      // 設定value
+      usertask.token = json_obj["token"].get<std::string>();
+      usertask.username = json_obj["username"].get<std::string>();
+      usertask.ai_type = json_obj["ai_type"].get<std::vector<std::string>>();
+      usertask.partition_device = json_obj["partition_device"].get<std::string>();
+      usertask.query_type = json_obj["query_type"].get<std::int8_t>();
+      usertask.starttime = json_obj["starttime"].get<std::int64_t>();
+      usertask.endtime = json_obj["endtime"].get<std::int64_t>();
+      usertask.path = json_obj["path"].get<std::string>();
+      usertask.resolution = json_obj["resolution"].get<std::string>();
+      usertask.activate = json_obj["activate"].get<bool>();
+      usertask.threadcontroll = true;
+      usertask.timestampnow = userdevice.timestampnow;
+    } catch (std::exception& e) {
+      pqxxController pqc1;
+      boost::property_tree::ptree jsonObject;
+      jsonObject.put("token", usertask.token);
+      jsonObject.put("type", "error occured");
+      jsonObject.put("message", e.what());
+      std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+      ws.write(net::buffer(inifile_text));
+    }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
