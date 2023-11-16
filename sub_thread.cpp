@@ -71,7 +71,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                       std::ref(usertask),
                                       catchinput,
                                       udpport);
-    auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
+    auto rtspserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
                                     serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.token,
                                     httptunnelingport);
@@ -79,6 +79,9 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     // Read VideoStream topic;
     std::thread readerthread(videostream_func);
     readerthread.detach();
+
+    std::thread rtspthread(rtspserverfunc);
+    rtspthread.detach();
 
     json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.token;
     json_obj["token"] = token;
