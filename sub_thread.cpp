@@ -329,6 +329,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                 usertask.token,
                                 usertask.path,
                                 1);
+
         if (ai_type.size() > 0 && query_type) // Sam, AI dds Agent
         {
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;

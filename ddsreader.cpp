@@ -33,6 +33,7 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
             break;
         }
 
+
         totalSent += toSend;
     }
 }
@@ -53,6 +54,15 @@ void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
 {
+
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start video staream reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -142,7 +152,18 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 } else {
                     frame264 = videoStream.frame;
                 }
+
                 sendLargeData(sock, frame264.data(), frame264.size(), addr);
+                if (first){
+                    auto nowsedframe = std::chrono::high_resolution_clock::now();
+                    auto sendframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        nowsedframe.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "send first frame time --->>>" << sendframeepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
                 start = std::chrono::steady_clock::now();
             }
         }
@@ -155,6 +176,14 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                                 std::string filepath,
                                 std::uint64_t port)
 {
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start h264ai reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -220,6 +249,16 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                 h2642Ai.sequence_number = data.value<uint32_t>("sequence_number");
                 h2642Ai.frame_bytes = data.value<int32_t>("frame_bytes");
                 h2642Ai.frame = data.get_values<uint8_t>("frame");
+                if (first){
+                    auto nowaiframe = std::chrono::high_resolution_clock::now();
+                    auto recivedaiframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        nowaiframe.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "recieved h264ai fiirst frame time --->>>" << recivedaiframeepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
 
                 if (usertask.ai_type.size() > 0 && usertask.query_type)
                     sendLargeData(sock, h2642Ai.frame.data(), h2642Ai.frame.size(), addr);
@@ -265,6 +304,14 @@ void DDSReader::playh264_reader(UserTask &usertask,
                                 std::string filepath,
                                 std::uint64_t port)
 {
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start playh264 reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -330,6 +377,16 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playh264.sequence_number = data.value<uint32_t>("sequence_number");
                 playh264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playh264.frame = data.get_values<uint8_t>("frame");
+                if (first){
+                    auto now264frame = std::chrono::high_resolution_clock::now();
+                    auto recived264frameepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now264frame.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "recieved h264ai fiirst frame time --->>>" << recived264frameepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
 
                 if (usertask.ai_type.size() > 0 && usertask.query_type)
                     sendLargeData(sock, playh264.frame.data(), playh264.frame.size(), addr);

@@ -106,6 +106,15 @@ int main(int argc, char *argv[]){
     // 收到client request
     beast::flat_buffer buffer;
     ws.read(buffer);
+    //cout timestamp in ms
+    auto nowws = std::chrono::high_resolution_clock::now();
+    auto receivedwsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowws.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "Recieved websocket request --->>>" << receivedwsepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     std::string received = beast::buffers_to_string(buffer.data());
     std::cout << "Received: " << received << std::endl;
     auto json_obj = nlohmann::json::parse(received);
@@ -117,7 +126,6 @@ int main(int argc, char *argv[]){
         for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
           if (it->first.token == usertask.token){
-            it->second.threadcontroll = false;
             ddswriter.query_writer(it->second.username,
                               it->second.ai_type,
                               it->second.partition_device,
@@ -127,6 +135,7 @@ int main(int argc, char *argv[]){
                               it->second.token,
                               it->second.path,
                               0);
+            it->second.threadcontroll = false;
           }
         }
         continue;
@@ -193,8 +202,16 @@ int main(int argc, char *argv[]){
       }
       if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
         continue;
-      else
+      else{
         ws.write(net::buffer(outputurl));
+        auto nowwrite = std::chrono::high_resolution_clock::now();
+        auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+            nowwrite.time_since_epoch()
+        ).count();
+        std::cout << "=======================" << std::endl;
+        std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
+        std::cout << "=======================" << std::endl;
+      }
     }
   }
   ws.close(websocket::close_code::normal);

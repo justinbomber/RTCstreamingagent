@@ -14,6 +14,14 @@ void RTSPServerManager::startserver(const int serverport,
                                     const std::string urlname,
                                     portNumBits const httptunnelingport)
                                     {
+  auto nowserverstart = std::chrono::high_resolution_clock::now();
+  auto startserverepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+      nowserverstart.time_since_epoch()
+  ).count();
+  std::cout << "=======================" << std::endl;
+  std::cout << "startserver time --->>>" << startserverepoch << std::endl;
+  std::cout << "=======================" << std::endl;
+
   UsageEnvironment* env;
   Boolean reuseFirstSource = False;
   TaskScheduler* scheduler = BasicTaskScheduler::createNew();
@@ -58,6 +66,13 @@ void RTSPServerManager::startserver(const int serverport,
 
   // char eventLoopWatchVariable = 0;
   // env->taskScheduler().doEventLoop(&eventLoopWatchVariable);
+  auto nowserverend = std::chrono::high_resolution_clock::now();
+  auto endserverepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+      nowserverend.time_since_epoch()
+  ).count();
+  std::cout << "=======================" << std::endl;
+  std::cout << "finish start server time --->>>" << endserverepoch << std::endl;
+  std::cout << "=======================" << std::endl;
   env->taskScheduler().doEventLoop();
   return;
 }
