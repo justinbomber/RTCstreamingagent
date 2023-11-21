@@ -18,7 +18,7 @@ class pqxxController
 {
 public:
     // Connection parameters for Postgres
-    std::string APP_CONFIG = "app.json";
+    std::string APP_CONFIG = "./../app.json";
     std::string DB_HOST = "host";
     std::string DB_PORT = "port";
     std::string DB_NAME = "dbname";
@@ -145,7 +145,7 @@ void pqxxController::get_app_configuration()
 }
 pqxx::result pqxxController::get_ai_type_intime(std::string camera, int starttime, int endtime, std::string ai_type)
 {
-    open();
+    //open();
     pqxx::result result;
     std::stringstream command;
     command << "SELECT min(unix_time) AS " << ai_type << " FROM public.tb_cam_pre_ai_meta WHERE "
@@ -181,7 +181,7 @@ pqxx::result pqxxController::get_ai_type_intime(std::string camera, int starttim
         pqxx::nontransaction nonTran(*this->connection);
         result = nonTran.exec(command);
     }
-    close();
+    //close();
     return result;
 }
 boost::property_tree::ptree pqxxController::get_all_ai_type_intime(std::string camera, int starttime, int endtime)
@@ -247,6 +247,8 @@ boost::property_tree::ptree pqxxController::get_multitag_ai_type_intime(std::str
     boost::property_tree::ptree json_result;
 
     pqxxController pqc1;
+    pqc1.get_app_configuration();
+    pqc1.open();
     try
     {
 
@@ -300,7 +302,7 @@ boost::property_tree::ptree pqxxController::get_multitag_ai_type_intime(std::str
 
         std::cerr << e.what() << '\n';
     }
-
+    pqc1.close();
     // boost::property_tree::write_json("test1.json", json_result);
     return json_result;
 }
