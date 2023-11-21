@@ -164,7 +164,7 @@ int main(int argc, char *argv[]){
     }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(300));
     taskmanager[userdevice] = usertask;
 
     if (!usertask.path.empty())
