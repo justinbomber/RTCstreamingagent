@@ -6,9 +6,6 @@
 #include "commonstruct.h"
 
 using namespace std;
-std::mutex mtx;
-std::condition_variable cv;
-bool hasfile = false;
 
 sub_thread::sub_thread()
 {
@@ -53,7 +50,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::string partition_device = usertask.partition_device;
     std::string username = usertask.username;
 
-    std::time_t timestampnow = std::time(0);
+    std::time_t timestampnow = usertask.timestampnow;
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
@@ -86,28 +83,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::thread rtspthread(rtspserverfunc);
     rtspthread.detach();
 
-    json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-    int time_duration = 0;
-    if (usertask.resolution == "1080"){
-        time_duration = 500;
-    } else {
-        time_duration = 1500;
-    }
-    auto start = std::chrono::steady_clock::now();
-    while (!usertask.videocontroll)
-    {
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration){
-            json_obj["url"] = "None";
-            break;
-        }
-        // start = std::chrono::steady_clock::now();
-    }
+    json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.token;
     json_obj["token"] = token;
     json_obj["path"] = path;
     json_obj["type"]= "video";
     std::cout << json_obj << std::endl;
-    hasfile = false;
 
     // 序列化 JSON 對象為字符串
     std::string json_str = json_obj.dump();
