@@ -21,6 +21,8 @@ const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
 void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
 {
+    OutPacketBuffer::maxSize = 300000;
+
     size_t totalSent = 0;
 
     while (totalSent < dataSize)
@@ -32,6 +34,7 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
             perror("sendto() failed");
             break;
         }
+
 
         totalSent += toSend;
     }
@@ -53,6 +56,15 @@ void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
 {
+
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start video staream reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -96,17 +108,27 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     std::vector<uint8_t> frame264;
     auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    nlohmann::json json_obj;
+    int time_duration = 0;
+    if (usertask.resolution == "1080"){
+        time_duration = 500;
+    } else {
+        time_duration = 1500;
+    }
 
     bool GotKeyFrame = false;
+    bool first = true;
 
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
+        now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
         {
             usertask.threadcontroll = false;
+            return;
         }
 
         for (auto sample : samples)
@@ -142,19 +164,43 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 } else {
                     frame264 = videoStream.frame;
                 }
+
                 sendLargeData(sock, frame264.data(), frame264.size(), addr);
+                if (first){
+                    usertask.videocontroll = true;
+                    auto nowsedframe = std::chrono::high_resolution_clock::now();
+                    auto sendframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        nowsedframe.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "send first frame time --->>>" << sendframeepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
                 start = std::chrono::steady_clock::now();
             }
         }
     }
-    if (!usertask.threadcontroll)
-        return;
+    if ((usertask.resolution == "480") && (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        json_obj["partition_device"] = usertask.partition_device;
+        json_obj["type"] = "disconnected";
+        commonstruct.write(json_obj.dump());
+    }
 }
 
 void DDSReader::h2642ai_reader(UserTask &usertask,
                                 std::string filepath,
                                 std::uint64_t port)
 {
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start h264ai reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -191,6 +237,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     std::vector<uint8_t> headframebuf = {};
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
+    bool first = true;
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -201,6 +248,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
         if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
+            return;
         }
         for (auto sample : samples)
         {
@@ -220,51 +268,62 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                 h2642Ai.sequence_number = data.value<uint32_t>("sequence_number");
                 h2642Ai.frame_bytes = data.value<int32_t>("frame_bytes");
                 h2642Ai.frame = data.get_values<uint8_t>("frame");
+                if (first){
+                    auto nowaiframe = std::chrono::high_resolution_clock::now();
+                    auto recivedaiframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        nowaiframe.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "recieved h264ai fiirst frame time --->>>" << recivedaiframeepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
 
-                if (usertask.ai_type.size() > 0 && usertask.query_type)
-                    sendLargeData(sock, h2642Ai.frame.data(), h2642Ai.frame.size(), addr);
-                else
+                if (h2642Ai.flag == 1)
                 {
-                    if (h2642Ai.flag == 1)
+                    if (count == -1)
                     {
-                        if (count == -1)
-                        {
-                            count++;
-                            headframebuf = {};
-                            bodyframebuf = {};
-                            headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
-                            continue;
-                        }
-                        headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                        // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
-                        // if (count % 30 == 0)
-                        // {
-                        //     saveAsH264File(framebuffer, count, filepath);
-                        //     framebuffer = {};
-                        // }
-                        saveAsH264File(headframebuf, count, filepath);
+                        count++;
                         headframebuf = {};
                         bodyframebuf = {};
                         headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
-                        count++;
+                        continue;
                     }
-                    else
-                    {
-                        bodyframebuf.insert(bodyframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
-                    }
-                    start = std::chrono::steady_clock::now();
+                    headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
+                    // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
+                    // if (count % 30 == 0)
+                    // {
+                    //     saveAsH264File(framebuffer, count, filepath);
+                    //     framebuffer = {};
+                    // }
+                    saveAsH264File(headframebuf, count, filepath);
+                    headframebuf = {};
+                    bodyframebuf = {};
+                    headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
+                    count++;
                 }
+                else
+                {
+                    bodyframebuf.insert(bodyframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
+                }
+                start = std::chrono::steady_clock::now();
             }
         }
     }
-    if (!usertask.threadcontroll)
-        return;
 }
 
 void DDSReader::playh264_reader(UserTask &usertask,
                                 std::string filepath,
                                 std::uint64_t port)
 {
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start playh264 reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -301,6 +360,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
     std::vector<uint8_t> headframebuf = {};
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
+    bool first = true;
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -311,6 +371,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
         if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
+            return;
         }
         for (auto sample : samples)
         {
@@ -330,43 +391,46 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playh264.sequence_number = data.value<uint32_t>("sequence_number");
                 playh264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playh264.frame = data.get_values<uint8_t>("frame");
+                if (first){
+                    auto now264frame = std::chrono::high_resolution_clock::now();
+                    auto recived264frameepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now264frame.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "recieved playh264 fiirst frame time --->>>" << recived264frameepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
 
-                if (usertask.ai_type.size() > 0 && usertask.query_type)
-                    sendLargeData(sock, playh264.frame.data(), playh264.frame.size(), addr);
-                else
+                if (playh264.flag == 1)
                 {
-                    if (playh264.flag == 1)
+                    if (count == -1)
                     {
-                        if (count == -1)
-                        {
-                            count++;
-                            headframebuf = {};
-                            bodyframebuf = {};
-                            headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
-                            continue;
-                        }
-                        headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                        // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
-                        // if (count % 30 == 0)
-                        // {
-                        //     saveAsH264File(framebuffer, count, filepath);
-                        //     framebuffer = {};
-                        // }
-                        saveAsH264File(headframebuf, count, filepath);
+                        count++;
                         headframebuf = {};
                         bodyframebuf = {};
                         headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
-                        count++;
+                        continue;
                     }
-                    else
-                    {
-                        bodyframebuf.insert(bodyframebuf.end(), playh264.frame.begin(), playh264.frame.end());
-                    }
-                    start = std::chrono::steady_clock::now();
+                    headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
+                    // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
+                    // if (count % 30 == 0)
+                    // {
+                    //     saveAsH264File(framebuffer, count, filepath);
+                    //     framebuffer = {};
+                    // }
+                    saveAsH264File(headframebuf, count, filepath);
+                    headframebuf = {};
+                    bodyframebuf = {};
+                    headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
+                    count++;
                 }
+                else
+                {
+                    bodyframebuf.insert(bodyframebuf.end(), playh264.frame.begin(), playh264.frame.end());
+                }
+                start = std::chrono::steady_clock::now();
             }
         }
     }
-    if (!usertask.threadcontroll)
-        return;
 }

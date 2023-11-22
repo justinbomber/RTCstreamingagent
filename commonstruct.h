@@ -6,10 +6,20 @@
 #include <vector>
 #include <rti/rti.hpp>
 #include <map>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include "appConfig.h"
 #include "liveMedia.hh"
 #include <thread>
+#include <boost/asio.hpp>
+#include <boost/beast.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+
+namespace net = boost::asio;
+namespace websocket = boost::beast::websocket;
+namespace beast = boost::beast;
+using tcp = net::ip::tcp; 
 
 // void initialize();
 struct UserTask
@@ -26,8 +36,9 @@ struct UserTask
   bool activate;
   bool threadcontroll;
   std::time_t timestampnow;
-  // std::thread::id thread_id;
-  pthread_t thread_id;
+  bool videocontroll = false;
+
+
   bool operator==(const UserTask &other) const
   {
     return token == other.token
@@ -41,8 +52,7 @@ struct UserTask
         && resolution == other.resolution
         && activate == other.activate
         && threadcontroll == other.threadcontroll
-        && token == other.token
-        && path == other.path;
+        && videocontroll == other.videocontroll;
   }
 };
 struct UserDevice
@@ -130,6 +140,17 @@ class CommonStruct{
     std::int32_t local_domainid;
     std::string local_udpip;
     portNumBits local_udpport;
+
+    net::io_context ioc;
+    tcp::resolver resolver;
+    websocket::stream<tcp::socket> ws;
+    bool isConnected_;
+
+    void connect();
+    void disconnect();
+    void write(const std::string& message);
+    void reconnect();
+    beast::flat_buffer read();
 
 };
 

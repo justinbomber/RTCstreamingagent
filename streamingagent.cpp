@@ -1,5 +1,5 @@
-#include <boost/asio.hpp>
 #include <time.h>
+#include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <iostream>
@@ -28,7 +28,6 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
-std::mutex mtx;
 
 CommonStruct commonstruct;
 // 定義taskmanager
@@ -83,29 +82,35 @@ void signalHandler(int signum)
 int main(int argc, char *argv[]){
   // 定義退出訊號
   signal(SIGINT, signalHandler);
+  commonstruct.connect();
 
-  // 定義websocket
-  net::io_context ioc;
   PostgresConnector postgresinstance;
   sub_thread sub;
-  tcp::resolver resolver(ioc);
-  websocket::stream<tcp::socket> ws(ioc);
-  auto const results = resolver.resolve(commonstruct.websocketip, commonstruct.websocketport);
-  auto ep = boost::asio::connect(ws.next_layer(), results);
-  ws.handshake(commonstruct.websocketip, "/" + commonstruct.websocketpath);
-  std::cout << "Websocket Server Connection Success !" << std::endl;
 
   // 連線至websocket server
-  std::string ipaddr = commonstruct.local_serverip;
 
   while (true)
   {
     commonstruct.local_udpport++;
     UserDevice userdevice;
     UserTask usertask;
+
+    std::string ipaddr = commonstruct.local_serverip;
     // 收到client request
     beast::flat_buffer buffer;
-    ws.read(buffer);
+    buffer = commonstruct.read();
+    if (buffer.size() == 0){
+      continue;
+    }
+    //cout timestamp in ms
+    auto nowws = std::chrono::high_resolution_clock::now();
+    auto receivedwsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowws.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "Recieved websocket request --->>>" << receivedwsepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     std::string received = beast::buffers_to_string(buffer.data());
     std::cout << "Received: " << received << std::endl;
     auto json_obj = nlohmann::json::parse(received);
@@ -117,7 +122,6 @@ int main(int argc, char *argv[]){
         for(auto it = taskmanager.begin(); it != taskmanager.end(); ++it)
         {
           if (it->first.token == usertask.token){
-            it->second.threadcontroll = false;
             ddswriter.query_writer(it->second.username,
                               it->second.ai_type,
                               it->second.partition_device,
@@ -127,6 +131,7 @@ int main(int argc, char *argv[]){
                               it->second.token,
                               it->second.path,
                               0);
+            it->second.threadcontroll = false;
           }
         }
         continue;
@@ -152,7 +157,6 @@ int main(int argc, char *argv[]){
       usertask.resolution = json_obj["resolution"].get<std::string>();
       usertask.activate = json_obj["activate"].get<bool>();
       usertask.threadcontroll = true;
-      usertask.timestampnow = userdevice.timestampnow;
     } catch (std::exception& e) {
       pqxxController pqc1;
       boost::property_tree::ptree jsonObject;
@@ -160,7 +164,7 @@ int main(int argc, char *argv[]){
       jsonObject.put("type", "error occured");
       jsonObject.put("message", e.what());
       std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-      ws.write(net::buffer(inifile_text));
+      commonstruct.write(inifile_text);
     }
 
     resortmap(userdevice, usertask, std::ref(taskmanager));
@@ -176,6 +180,20 @@ int main(int argc, char *argv[]){
                   commonstruct.local_udpip, 
                   ipaddr, 
                   commonstruct.local_rootpath);
+
+      if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
+        continue;
+      else{
+        commonstruct.write(outputurl);
+        auto nowwrite = std::chrono::high_resolution_clock::now();
+        auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+            nowwrite.time_since_epoch()
+        ).count();
+        std::cout << "=======================" << std::endl;
+        std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
+        std::cout << "=======================" << std::endl;
+      }
+
       if (usertask.ai_type.size() > 0 && usertask.query_type == 0){
         boost::property_tree::ptree jsonObject;
         pqxxController pqc1;
@@ -188,15 +206,10 @@ int main(int argc, char *argv[]){
         jsonObject.put("type", "ai_time");
 
         std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-        ws.write(net::buffer(inifile_text));
-        sleep(1);
+        commonstruct.write(inifile_text);
       }
-      if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
-        continue;
-      else
-        ws.write(net::buffer(outputurl));
     }
   }
-  ws.close(websocket::close_code::normal);
+  commonstruct.disconnect();
   return 0;
 }

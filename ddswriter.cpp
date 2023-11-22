@@ -96,9 +96,16 @@ void DDSWriter::query_writer(const std::string & username,
     while (cc < target)
     {
         writer.write(sample);
+        auto nowwriteer = std::chrono::high_resolution_clock::now();
+        auto writertopicepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+            nowwriteer.time_since_epoch()
+        ).count();
+        std::cout << "=======================" << std::endl;
+        std::cout << "finish sending tp_query " << cc << " time--->>>" << writertopicepoch << std::endl;
+        std::cout << "=======================" << std::endl;
         // Output a log
         std::cout << "Writer is writing a data sample. Value: " << sample;
         cc ++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
