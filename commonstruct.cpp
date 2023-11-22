@@ -57,14 +57,20 @@ void CommonStruct::disconnect() {
         return;
     }
 
+    // 嘗試關閉WebSocket連接
     try {
-        ws.close(websocket::close_code::normal);
-        isConnected_ = false;
-        std::cout << "WebSocket connection closed." << std::endl;
+        if (ws.is_open()) { // 檢查連接是否開放
+            ws.close(websocket::close_code::normal);
+            std::cout << "WebSocket connection closed." << std::endl;
+        }
     } catch (const std::exception& e) {
         std::cerr << "Error closing WebSocket: " << e.what() << std::endl;
     }
+
+    // 無論關閉操作是否成功，都將連接標誌設置為false
+    isConnected_ = false;
 }
+
 
 void CommonStruct::reconnect() {
     sleep(1);
@@ -111,16 +117,26 @@ void CommonStruct::write(const std::string& message) {
 
 beast::flat_buffer CommonStruct::read() {
     beast::flat_buffer buffer;
+
+    if (!isConnected_ || !ws.is_open()) {
+        std::cerr << "WebSocket not connected or closed." << std::endl;
+        return buffer;
+    }
+
     try {
         ws.read(buffer);
     } catch (const beast::system_error& e) {
         std::cerr << "Read error: " << e.what() << std::endl;
+        std::cout << isConnected_ << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         buffer.clear();
-        reconnect();
+        disconnect();
+        connect();
     }
+
     return buffer;
 }
+
 
 // Define ddscam tp_videostream topic and qos
 dds::domain::DomainParticipant ddscam_participant(domain_id);
