@@ -21,6 +21,8 @@ const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
 void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
 {
+    OutPacketBuffer::maxSize = 300000;
+
     size_t totalSent = 0;
 
     while (totalSent < dataSize)
@@ -85,17 +87,22 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     std::vector<uint8_t> frame264;
     auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    nlohmann::json json_obj;
 
     bool GotKeyFrame = false;
+    bool first = true;
+    int time_duration = 1500;
 
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
+        now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
         {
             usertask.threadcontroll = false;
+            return;
         }
 
         for (auto sample : samples)
@@ -128,10 +135,17 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 if (!h264480decoder.convertH264(videoStream.frame, frame264))
                         std::cerr << "Error converting 480P\n";
                 sendLargeData(sock, frame264.data(), frame264.size(), addr);
+                if (first){
+                    usertask.videocontroll = true;
+                }
                 start = std::chrono::steady_clock::now();
             }
         }
     }
-    if (!usertask.threadcontroll)
-        return;
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        json_obj["partition_device"] = usertask.partition_device;
+        json_obj["type"] = "disconnected";
+        commonstruct.write(json_obj.dump());
+    }
 }
