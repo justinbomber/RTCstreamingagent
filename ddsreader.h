@@ -27,7 +27,6 @@ class DDSReader {
     private:
         std::uint32_t last_sequence = 0;
         bool isShutdown_ = false;
-        bool first = true;
 
     public:
         DDSReader();

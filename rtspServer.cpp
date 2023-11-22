@@ -14,6 +14,7 @@ void RTSPServerManager::startserver(const int serverport,
                                     const std::string urlname,
                                     portNumBits const httptunnelingport)
                                     {
+  OutPacketBuffer::maxSize = 300000;
   auto nowserverstart = std::chrono::high_resolution_clock::now();
   auto startserverepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
       nowserverstart.time_since_epoch()
