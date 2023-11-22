@@ -21,6 +21,8 @@ const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
 void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
 {
+    OutPacketBuffer::maxSize = 300000;
+
     size_t totalSent = 0;
 
     while (totalSent < dataSize)
@@ -33,6 +35,7 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
             break;
         }
 
+
         totalSent += toSend;
     }
 }
@@ -42,6 +45,15 @@ void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
 {
+
+    auto nowreaderstart = std::chrono::high_resolution_clock::now();
+    auto startreaderepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        nowreaderstart.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start video staream reader time --->>>" << startreaderepoch << std::endl;
+    std::cout << "=======================" << std::endl;
+
     int sock;
     struct sockaddr_in addr;
     const char *multicast_ip = "239.255.42.42";
@@ -85,17 +97,27 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     std::vector<uint8_t> frame264;
     auto start = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
+    nlohmann::json json_obj;
+    int time_duration = 0;
+    if (usertask.resolution == "1080"){
+        time_duration = 500;
+    } else {
+        time_duration = 1500;
+    }
 
     bool GotKeyFrame = false;
+    bool first = true;
 
     while (usertask.threadcontroll)
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
+        now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
         {
             usertask.threadcontroll = false;
+            return;
         }
 
         for (auto sample : samples)
@@ -128,10 +150,25 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 if (!h264480decoder.convertH264(videoStream.frame, frame264))
                         std::cerr << "Error converting 480P\n";
                 sendLargeData(sock, frame264.data(), frame264.size(), addr);
+                if (first){
+                    usertask.videocontroll = true;
+                    auto nowsedframe = std::chrono::high_resolution_clock::now();
+                    auto sendframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        nowsedframe.time_since_epoch()
+                    ).count();
+                    std::cout << "=======================" << std::endl;
+                    std::cout << "send first frame time --->>>" << sendframeepoch << std::endl;
+                    std::cout << "=======================" << std::endl;
+                    first = false;
+                }
                 start = std::chrono::steady_clock::now();
             }
         }
     }
-    if (!usertask.threadcontroll)
-        return;
+    if ((usertask.resolution == "480") && (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)){
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        json_obj["partition_device"] = usertask.partition_device;
+        json_obj["type"] = "disconnected";
+        commonstruct.write(json_obj.dump());
+    }
 }
