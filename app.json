@@ -9,7 +9,7 @@
     "websocket": {
         "ip": "10.1.1.104",
         "port": "8011",
-        "path": "ddsagent480"
+        "path": "ddsagent"
     },
     "ddscam": {
         "qos": "ddscamxml/ddscam_qos.xml",

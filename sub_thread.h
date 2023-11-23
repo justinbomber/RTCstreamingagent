@@ -27,9 +27,14 @@ namespace net = boost::asio;
 namespace websocket = boost::beast::websocket;
 using tcp = boost::asio::ip::tcp;
 
+// 全局變數聲明
+extern std::mutex mtx;
+extern std::condition_variable cv;
+extern bool foundFile;
+
 class sub_thread {
-    std::atomic_bool should_close{false};
 private:
+    std::atomic_bool should_close{false};
     bool isShutdown_ = false;
 public:
     sub_thread();
@@ -40,6 +45,10 @@ public:
                                 std::string udpip,
                                 std::string ipaddr,
                                 std::string rootpath);
+    pqxx::result searchdatabase(const std::string & tablename,
+                                const std::string & source,
+                                const std::int64_t & starttime,
+                                const std::int64_t & endtime);
 };
 
 #endif // YOURCLASS_H
