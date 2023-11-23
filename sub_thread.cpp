@@ -272,7 +272,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::vector<std::string> ai_type = usertask.ai_type;
     std::string username = usertask.username;
 
-    std::time_t timestampnow = usertask.timestampnow;
+    std::time_t timestampnow = std::time(0);
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
@@ -305,33 +305,18 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
                                     serverport, udpport, udpip,
-                                    usertask.partition_device + "/" + usertask.token,
+                                    usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport);
-    if (ai_type.size() == 0 && query_type)
-    {
-        // start rtps server
-        std::thread rtpsserverthread(rtpsserverfunc);
-        rtpsserverthread.detach();
-        // Read VideoStream topic;
-        if (resolution == "1080")
-        {
-            // Read VideoStream topic;
-            std::thread readerthread(videostream_func);
-            readerthread.detach();
-        }
-        else
-        {
-            // Read VideoStream topic;
-            std::thread readerthread(videostream_func);
-            readerthread.detach();
-        }
-        json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-        int time_duration = 0;
-        if (usertask.resolution == "1080"){
-            time_duration = 500;
-        } else {
-            time_duration = 1500;
-        }
+
+    // Read VideoStream topic;
+    std::thread readerthread(videostream_func);
+    readerthread.detach();
+
+    std::thread rtspthread(rtspserverfunc);
+    rtspthread.detach();
+
+    json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
+        int time_duration = 1500;
         auto start = std::chrono::steady_clock::now();
         while (!usertask.videocontroll)
         {
@@ -342,112 +327,11 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
             }
             // start = std::chrono::steady_clock::now();
         }
-        
-    }
-    else
-    {
-        // Write Tp_Query
-        ddswriter.query_writer(usertask.username, 
-                                usertask.ai_type, 
-                                usertask.partition_device, 
-                                usertask.query_type, 
-                                usertask.starttime, 
-                                usertask.endtime, 
-                                usertask.token,
-                                usertask.path,
-                                1);
-
-        if (query_type) // Sam, AI dds Agent
-        {
-            json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-        }
-        else
-        // if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
-        {
-            if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
-                create_userfolder(path, partition_device, username, rootpath, timestampnow);
-
-                if (ai_type.size() == 0)
-                {
-                    // Read playh264 topic;
-                    std::thread readerthread(playh264_func);
-                    readerthread.detach();
-                } else {
-                    // Read h2642ai topic;
-                    std::thread readerthread(h2642ai_func);
-                    readerthread.detach();
-                }
-
-                // trasfer to 'ts' format for M3U8
-                std::thread transthread(transfunc);
-                transthread.detach();
-
-                int fileexist = 0;
-                auto start = std::chrono::steady_clock::now();
-                std::unique_lock<std::mutex> lock(mtx);
-
-                if(cv.wait_for(lock, std::chrono::seconds(10), []{ return hasfile; }))
-                {
-                    json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-                    // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                        partition_device + "/" + 
-                                        username + "/" +
-                                        std::to_string(timestampnow) + "/" +
-                                        path + ".m3u8";
-                } else {
-                    json_obj["url"] = "None";
-                }
-            } else {
-                json_obj["url"] = "None";
-            }
-        }                                                                                                            
-    }
-    json_obj["token"] = token;
     json_obj["path"] = path;
     json_obj["type"]= "video";
     std::cout << json_obj << std::endl;
+    hasfile = false;
 
     // 序列化 JSON 對象為字符串
-    std::string json_str = json_obj.dump();
-    // sleep(1);
-    // return json_str;
-    return json_str;
-}
-
-pqxx::result sub_thread::searchdatabase(const std::string &tablename,
-                                        const std::string &source,
-                                        const std::int64_t &starttime,
-                                        const std::int64_t &endtime)
-{
-    pqxx::result result;
-    std::string exetutestring = "SELECT * FROM " +
-                                tablename + " WHERE " +
-                                "source = '" + source +
-                                "' AND starttime >= " + to_string(starttime) + " AND endtime <= " + to_string(endtime);
-    PostgresConnector postgresinstance;
-    if (postgresinstance.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433))
-    {
-        cout << "open database successfully" << endl;
-        result = postgresinstance.executeResultset(exetutestring);
-    }
-    else
-        cout << "Can't open database." << endl;
-    bool closedb = postgresinstance.close();
-    for (auto const &row : result)
-    {
-        std::string source = row.at("source").as<std::string>(); // source is a device id
-        std::string content_id = row.at("content_id").as<std::string>();
-        std::string file_name = row.at("file_name").as<std::string>();
-        int unix_time_start = row.at("unix_time_start").as<int>();
-        int unix_time_end = row.at("unix_time_end").as<int>();
-        int format_code = row.at("format_code").as<int>();
-        int file_bytes = row.at("file_bytes").as<int>();
-        std::string status = row.at("status").as<std::string>();
-        std::cout << "test" << std::endl;
-        std::cout << source << std::endl
-                  << content_id << std::endl
-                  << file_name << std::endl
-                  << std::to_string(unix_time_start) << " " << std::to_string(unix_time_end) << std::endl;
-    }
-    return result;
+    return json_obj.dump();
 }
