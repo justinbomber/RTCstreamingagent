@@ -21,22 +21,27 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "announceURL.hh"
 #include <GroupsockHelper.hh> // for "weHaveAnIPv*Address()"
 
-void announceURL(RTSPServer* rtspServer, ServerMediaSession* sms) {
-  if (rtspServer == NULL || sms == NULL) return; // sanity check
+void announceURL(RTSPServer *rtspServer, ServerMediaSession *sms)
+{
+    if (rtspServer == NULL || sms == NULL)
+        return; // sanity check
 
-  UsageEnvironment& env = rtspServer->envir();
+    UsageEnvironment &env = rtspServer->envir();
 
-  env << "Play this stream using the URL ";
-  if (weHaveAnIPv4Address(env)) {
-    char* url = rtspServer->ipv4rtspURL(sms);
-    env << "\"" << url << "\"";
-    delete[] url;
-    if (weHaveAnIPv6Address(env)) env << " or ";
-  }
-  if (weHaveAnIPv6Address(env)) {
-    char* url = rtspServer->ipv6rtspURL(sms);
-    env << "\"" << url << "\"";
-    delete[] url;
-  }
-  env << "\n";
+    env << "Play this stream using the URL ";
+    if (weHaveAnIPv4Address(env))
+    {
+        char *url = rtspServer->ipv4rtspURL(sms);
+        env << "\"" << url << "\"";
+        delete[] url;
+        if (weHaveAnIPv6Address(env))
+            env << " or ";
+    }
+    if (weHaveAnIPv6Address(env))
+    {
+        char *url = rtspServer->ipv6rtspURL(sms);
+        env << "\"" << url << "\"";
+        delete[] url;
+    }
+    env << "\n";
 }

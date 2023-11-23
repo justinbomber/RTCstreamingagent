@@ -153,6 +153,16 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
 
                 if (extension == ".h264")
                 {
+                    if (is_first)
+                    {
+                        auto transferstart = std::chrono::high_resolution_clock::now();
+                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            transferstart.time_since_epoch()
+                        ).count();
+                        std::cout << "=======================" << std::endl;
+                        std::cout << " start transfer to ts --->>>" << transferepoch << std::endl;
+                        std::cout << "+++++++++++++++++++++++" << std::endl;
+                    }
                     if (!usertask.threadcontroll)
                         return;
                     const std::string filenameWithoutExt = entry.path().stem().string();
@@ -168,6 +178,13 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                     std::filesystem::remove(entry.path());
                     if (is_first)
                     {
+                        auto transferstart = std::chrono::high_resolution_clock::now();
+                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            transferstart.time_since_epoch()
+                        ).count();
+                        std::cout << "=======================" << std::endl;
+                        std::cout << " finish transfer to ts --->>>" << transferepoch << std::endl;
+                        std::cout << "+++++++++++++++++++++++" << std::endl;
                         std::lock_guard<std::mutex> lock(mtx);
                         hasfile = true;
                         cv.notify_one();

@@ -42,6 +42,14 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
 
 void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filepath)
 {
+    auto savefiletime = std::chrono::high_resolution_clock::now();
+    auto savefileepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        savefiletime.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "start save h264 file time --->>>" << savefileepoch << std::endl;
+    std::cout << "+++++++++++++++++++++++" << std::endl;
+
     std::string filename = filepath + "sample-" + std::to_string(num) + ".h264";
     std::cout << "save as h264 file: " << filename << std::endl;
     std::ofstream outFile(filename, std::ios::binary);
@@ -49,6 +57,14 @@ void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filep
         return;
     outFile.write(reinterpret_cast<const char *>(data.data()), data.size());
     outFile.close();
+
+    savefiletime = std::chrono::high_resolution_clock::now();
+    savefileepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+        savefiletime.time_since_epoch()
+    ).count();
+    std::cout << "=======================" << std::endl;
+    std::cout << "finish save h264 file time --->>>" << savefileepoch << std::endl;
+    std::cout << "+++++++++++++++++++++++" << std::endl;
 }
 
 // todo :: clean file path
@@ -63,7 +79,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
     ).count();
     std::cout << "=======================" << std::endl;
     std::cout << "start video staream reader time --->>>" << startreaderepoch << std::endl;
-    std::cout << "=======================" << std::endl;
+    std::cout << "+++++++++++++++++++++++" << std::endl;
 
     int sock;
     struct sockaddr_in addr;
@@ -119,6 +135,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
     bool GotKeyFrame = false;
     bool first = true;
+    bool first480 = true;
 
     while (usertask.threadcontroll)
     {
@@ -151,6 +168,15 @@ void DDSReader::videostream_reader(UserTask &usertask,
                 videoStream.frame = data.get_values<uint8_t>("frame");
 
                 if (usertask.resolution == "480") {
+                    if (first480){
+                        auto nowsedframe = std::chrono::high_resolution_clock::now();
+                        auto sendframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            nowsedframe.time_since_epoch()
+                        ).count();
+                        std::cout << "=======================" << std::endl;
+                        std::cout << "start transfer 480 frame time --->>>" << sendframeepoch << std::endl;
+                        std::cout << "+++++++++++++++++++++++" << std::endl;
+                    }
                     if (!GotKeyFrame) {
                         if (videoStream.flag == 1)
                             GotKeyFrame = true;
@@ -160,7 +186,22 @@ void DDSReader::videostream_reader(UserTask &usertask,
                         }
                     }
                     if (!h264480decoder.convertH264(videoStream.frame, frame264))
+                    {
                             std::cerr << "Error converting 480P\n";
+                            first480 = true;
+                    }
+                    else{
+                        if (first480){
+                            auto nowsedframe = std::chrono::high_resolution_clock::now();
+                            auto sendframeepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                nowsedframe.time_since_epoch()
+                            ).count();
+                            std::cout << "=======================" << std::endl;
+                            std::cout << "finish transfer 480 time --->>>" << sendframeepoch << std::endl;
+                            std::cout << "+++++++++++++++++++++++" << std::endl;
+                            first480 = false;
+                        }
+                    }
                 } else {
                     frame264 = videoStream.frame;
                 }
@@ -174,7 +215,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
                     ).count();
                     std::cout << "=======================" << std::endl;
                     std::cout << "send first frame time --->>>" << sendframeepoch << std::endl;
-                    std::cout << "=======================" << std::endl;
+                    std::cout << "+++++++++++++++++++++++" << std::endl;
                     first = false;
                 }
                 start = std::chrono::steady_clock::now();
@@ -199,7 +240,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     ).count();
     std::cout << "=======================" << std::endl;
     std::cout << "start h264ai reader time --->>>" << startreaderepoch << std::endl;
-    std::cout << "=======================" << std::endl;
+    std::cout << "+++++++++++++++++++++++" << std::endl;
 
     int sock;
     struct sockaddr_in addr;
@@ -275,7 +316,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                     ).count();
                     std::cout << "=======================" << std::endl;
                     std::cout << "recieved h264ai fiirst frame time --->>>" << recivedaiframeepoch << std::endl;
-                    std::cout << "=======================" << std::endl;
+                    std::cout << "+++++++++++++++++++++++" << std::endl;
                     first = false;
                 }
 
@@ -322,7 +363,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
     ).count();
     std::cout << "=======================" << std::endl;
     std::cout << "start playh264 reader time --->>>" << startreaderepoch << std::endl;
-    std::cout << "=======================" << std::endl;
+    std::cout << "+++++++++++++++++++++++" << std::endl;
 
     int sock;
     struct sockaddr_in addr;
@@ -398,7 +439,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
                     ).count();
                     std::cout << "=======================" << std::endl;
                     std::cout << "recieved playh264 fiirst frame time --->>>" << recived264frameepoch << std::endl;
-                    std::cout << "=======================" << std::endl;
+                    std::cout << "+++++++++++++++++++++++" << std::endl;
                     first = false;
                 }
 

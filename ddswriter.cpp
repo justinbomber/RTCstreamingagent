@@ -102,7 +102,7 @@ void DDSWriter::query_writer(const std::string & username,
         ).count();
         std::cout << "=======================" << std::endl;
         std::cout << "finish sending tp_query " << cc << " time--->>>" << writertopicepoch << std::endl;
-        std::cout << "=======================" << std::endl;
+        std::cout << "+++++++++++++++++++++++" << std::endl;
         // Output a log
         std::cout << "Writer is writing a data sample. Value: " << sample;
         cc ++;
