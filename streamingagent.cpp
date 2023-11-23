@@ -1,5 +1,5 @@
-#include <time.h>
 #include <boost/asio.hpp>
+#include <time.h>
 #include <boost/beast.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <iostream>
@@ -28,6 +28,7 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
 bool globalthread = true;
+std::mutex mtx;
 
 CommonStruct commonstruct;
 // 定義taskmanager
@@ -71,7 +72,8 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
                                    it->second.token,
                                    it->second.path,
                                    0);
-        }
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
     }
 }
 
@@ -92,10 +94,19 @@ int main(int argc, char *argv[])
     signal(SIGINT, signalHandler);
     commonstruct.connect();
 
-    PostgresConnector postgresinstance;
+    // 定義websocket
+  net::io_context ioc;
+  PostgresConnector postgresinstance;
     sub_thread sub;
+  tcp::resolver resolver(ioc);
+  websocket::stream<tcp::socket> ws(ioc);
+  auto const results = resolver.resolve(commonstruct.websocketip, commonstruct.websocketport);
+  auto ep = boost::asio::connect(ws.next_layer(), results);
+  ws.handshake(commonstruct.websocketip, "/" + commonstruct.websocketpath);
+  std::cout << "Websocket Server Connection Success !" << std::endl;
 
     // 連線至websocket server
+  std::string ipaddr = commonstruct.local_serverip;
 
     while (true)
     {
@@ -169,7 +180,8 @@ int main(int argc, char *argv[])
             usertask.resolution = json_obj["resolution"].get<std::string>();
             usertask.activate = json_obj["activate"].get<bool>();
             usertask.threadcontroll = true;
-        }
+          usertask.timestampnow = userdevice.timestampnow;
+    }
         catch (std::exception &e)
         {
             pqxxController pqc1;
@@ -178,11 +190,11 @@ int main(int argc, char *argv[])
             jsonObject.put("type", "error occured");
             jsonObject.put("message", e.what());
             std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-            commonstruct.write(inifile_text);
+            ws.write(net::buffer(inifile_text));
         }
 
-        resortmap(userdevice, usertask, std::ref(taskmanager));
-        // std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        resortmap(userdevice, usertask, taskmanager);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
         taskmanager[userdevice] = usertask;
 
         if (!usertask.path.empty())
@@ -199,7 +211,7 @@ int main(int argc, char *argv[])
                 continue;
             else
             {
-                commonstruct.write(outputurl);
+                ws.write(net::buffer(outputurl));
                 auto nowwrite = std::chrono::high_resolution_clock::now();
                 auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
                                         nowwrite.time_since_epoch())
@@ -226,6 +238,6 @@ int main(int argc, char *argv[])
             }
         }
     }
-    commonstruct.disconnect();
+    ws.close(websocket::close_code::normal);
     return 0;
 }

@@ -21,8 +21,6 @@ const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
 void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
 {
-    OutPacketBuffer::maxSize = 300000;
-
     size_t totalSent = 0;
 
     while (totalSent < dataSize)
@@ -141,11 +139,10 @@ void DDSReader::videostream_reader(UserTask &usertask,
     {
         // Read/take samples normally
         dds::sub::LoanedSamples<dds::core::xtypes::DynamicData> samples = reader.select().take();
-        now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
-            return;
         }
 
         for (auto sample : samples)

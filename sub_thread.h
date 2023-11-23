@@ -27,14 +27,9 @@ namespace net = boost::asio;
 namespace websocket = boost::beast::websocket;
 using tcp = boost::asio::ip::tcp;
 
-// 全局變數聲明
-extern std::mutex mtx;
-extern std::condition_variable cv;
-extern bool foundFile;
-
 class sub_thread {
-private:
     std::atomic_bool should_close{false};
+private:
     bool isShutdown_ = false;
 public:
     sub_thread();

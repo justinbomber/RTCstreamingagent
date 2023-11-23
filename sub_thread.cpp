@@ -6,9 +6,6 @@
 #include "commonstruct.h"
 
 using namespace std;
-std::mutex mtx;
-std::condition_variable cv;
-bool hasfile = false;
 
 sub_thread::sub_thread()
 {
@@ -275,7 +272,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::vector<std::string> ai_type = usertask.ai_type;
     std::string username = usertask.username;
 
-    std::time_t timestampnow = std::time(0);
+    std::time_t timestampnow = usertask.timestampnow;
 
     DDSReader ddsreader;
     DDSWriter ddswriter;
@@ -308,7 +305,7 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
                                     serverport, udpport, udpip,
-                                    usertask.partition_device + "/" + usertask.username,
+                                    usertask.partition_device + "/" + usertask.token,
                                     httptunnelingport);
     if (ai_type.size() == 0 && query_type)
     {
@@ -409,10 +406,12 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     json_obj["path"] = path;
     json_obj["type"]= "video";
     std::cout << json_obj << std::endl;
-    hasfile = false;
 
     // 序列化 JSON 對象為字符串
-    return json_obj.dump();
+    std::string json_str = json_obj.dump();
+    // sleep(1);
+    // return json_str;
+    return json_str;
 }
 
 pqxx::result sub_thread::searchdatabase(const std::string &tablename,
