@@ -174,7 +174,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
                             nowsedframe.time_since_epoch()
                         ).count();
                         std::cout << "=======================" << std::endl;
-                        std::cout << "start transfer 480 frame time --->>>" << sendframeepoch << std::endl;
+                        std::cout << videoStream.sequence_number << "<--- start transfer 480 frame time --->>>" << sendframeepoch << std::endl;
                         std::cout << "+++++++++++++++++++++++" << std::endl;
                     }
                     if (!GotKeyFrame) {
@@ -197,7 +197,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
                                 nowsedframe.time_since_epoch()
                             ).count();
                             std::cout << "=======================" << std::endl;
-                            std::cout << "finish transfer 480 time --->>>" << sendframeepoch << std::endl;
+                            std::cout << videoStream.sequence_number << "<---finish transfer 480 time --->>>" << sendframeepoch << std::endl;
                             std::cout << "+++++++++++++++++++++++" << std::endl;
                             first480 = false;
                         }
