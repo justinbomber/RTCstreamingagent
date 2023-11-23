@@ -145,7 +145,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
         {
             usertask.threadcontroll = false;
-            return;
+            break;
         }
 
         for (auto sample : samples)
@@ -222,7 +222,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
             }
         }
     }
-    if ((usertask.resolution == "480") && (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)){
+    if (usertask.resolution == "480"){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         json_obj["partition_device"] = usertask.partition_device;
         json_obj["type"] = "disconnected";
