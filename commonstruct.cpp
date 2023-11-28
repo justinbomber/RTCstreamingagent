@@ -118,9 +118,23 @@ void CommonStruct::write(const std::string& message) {
 beast::flat_buffer CommonStruct::read() {
     beast::flat_buffer buffer;
 
-    if (!isConnected_ || !ws.is_open()) {
-        std::cerr << "WebSocket not connected or closed." << std::endl;
-        return buffer;
+    while (!isConnected_ || !ws.is_open()) {
+        std::cerr << "WebSocket not connected or closed. Trying to reconnect..." << std::endl;
+
+        // 嘗試重新連接
+        try {
+            disconnect();
+            connect();
+            if (isConnected_ && ws.is_open()) {
+                break;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error reconnecting WebSocket: " << e.what() << std::endl;
+            continue;
+        }
+
+        // 等待 3 秒後再次嘗試
+        std::this_thread::sleep_for(std::chrono::seconds(5));
     }
 
     try {
