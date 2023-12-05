@@ -19,6 +19,7 @@ DDSReader::DDSReader()
 
 const size_t MAX_PACKET_SIZE = 1472; // 最大UDP封包大小
 
+
 void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockaddr_in &addr)
 {
     OutPacketBuffer::maxSize = 300000;
@@ -38,6 +39,27 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
 
         totalSent += toSend;
     }
+}
+
+void appendToM3U8File(std::string m3u8name, const std::string &directory, const std::string &newString)
+{
+    std::string filename = directory + m3u8name + ".m3u8";
+
+    // 打開已存在的文件用於追加
+    std::ofstream outFile(filename, std::ios::app);
+
+    // 檢查文件是否成功打開
+    if (!outFile)
+    {
+        std::cerr << "無法打開文件" << std::endl;
+        return;
+    }
+    outFile << "#EXTINF:1.000000,\n";
+    outFile << newString << "\n";
+    outFile << "#EXT-X-DISCONTINUITY\n";
+
+    // 關閉文件
+    outFile.close();
 }
 
 void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filepath)
@@ -67,7 +89,30 @@ void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filep
     std::cout << "+++++++++++++++++++++++" << std::endl;
 }
 
-// todo :: clean file path
+void transferdata(std::queue<std::vector<uint8_t>> &dataqueue, 
+                const std::string &targetFolder, 
+                UserTask &usertask, 
+                const std::string &inputfolder)
+{
+    int count = 0;
+    while (!dataqueue.empty() && usertask.threadcontroll)
+    {
+        auto data = dataqueue.front();
+        saveAsH264File(data, count, targetFolder);
+        std::string filefix = "sample-" + std::to_string(count);
+        std::string h264filename = "sample-" + std::to_string(count) + ".h264";
+        std::string tsfilename = "\'sample-" + std::to_string(count) + ".ts\'";
+        appendToM3U8File(usertask.path, targetFolder, tsfilename);
+        std::string cmdline;
+        cmdline = "ffmpeg -i " + inputfolder + filefix + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 1920x1080 " +
+                            targetFolder + filefix + ".ts && mv " +
+                            targetFolder + filefix + ".ts " +
+                            targetFolder + "\"\'" + filefix + ".ts\'\"";
+        system(cmdline.c_str());
+        dataqueue.pop();
+    }
+}
+
 void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
@@ -280,6 +325,8 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     auto start = std::chrono::steady_clock::now();
     bool first = true;
 
+
+
     // Read the data sample
     while (usertask.threadcontroll)
     {
@@ -355,6 +402,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
 
 void DDSReader::playh264_reader(UserTask &usertask,
                                 std::string filepath,
+                                std::string inputpath,
                                 std::uint64_t port)
 {
     auto nowreaderstart = std::chrono::high_resolution_clock::now();
@@ -402,6 +450,13 @@ void DDSReader::playh264_reader(UserTask &usertask,
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
     bool first = true;
+
+    auto transfer_t = std::bind(&transferdata, std::ref(framequeue), 
+                                filepath, 
+                                std::ref(usertask), 
+                                inputpath);
+    std::thread transfer_thread(transfer_t);
+    transfer_thread.detach();
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -460,7 +515,8 @@ void DDSReader::playh264_reader(UserTask &usertask,
                     //     saveAsH264File(framebuffer, count, filepath);
                     //     framebuffer = {};
                     // }
-                    saveAsH264File(headframebuf, count, filepath);
+                    // saveAsH264File(headframebuf, count, filepath);
+                    framequeue.push(headframebuf);
                     headframebuf = {};
                     bodyframebuf = {};
                     headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());
