@@ -153,16 +153,11 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
 
                 if (extension == ".h264")
                 {
-                    if (is_first)
-                    {
-                        auto transferstart = std::chrono::high_resolution_clock::now();
-                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            transferstart.time_since_epoch()
-                        ).count();
-                        std::cout << "=======================" << std::endl;
-                        std::cout << " start transfer to ts --->>>" << transferepoch << std::endl;
-                        std::cout << "+++++++++++++++++++++++" << std::endl;
-                    }
+                    auto transferstart1 = std::chrono::high_resolution_clock::now();
+                    auto transferepoch1 = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        transferstart1.time_since_epoch()
+                    ).count();
+
                     if (!usertask.threadcontroll)
                         return;
                     const std::string filenameWithoutExt = entry.path().stem().string();
@@ -176,15 +171,15 @@ void transferH264(const std::string &targetFolder, UserTask &usertask, std::stri
                     system(cmdline.c_str());
 
                     std::filesystem::remove(entry.path());
+                    auto transferstart = std::chrono::high_resolution_clock::now();
+                    auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        transferstart.time_since_epoch()
+                    ).count();
+
+                    std::cout << filenameWithoutExt << " transfer to ts cost time: " << transferepoch - transferepoch1 << std::endl;
+
                     if (is_first)
                     {
-                        auto transferstart = std::chrono::high_resolution_clock::now();
-                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            transferstart.time_since_epoch()
-                        ).count();
-                        std::cout << "=======================" << std::endl;
-                        std::cout << " finish transfer to ts --->>>" << transferepoch << std::endl;
-                        std::cout << "+++++++++++++++++++++++" << std::endl;
                         std::lock_guard<std::mutex> lock(mtx);
                         hasfile = true;
                         cv.notify_one();
@@ -349,19 +344,18 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     }
     else
     {
-        // Write Tp_Query
-        ddswriter.query_writer(usertask.username, 
-                                usertask.ai_type, 
-                                usertask.partition_device, 
-                                usertask.query_type, 
-                                usertask.starttime, 
-                                usertask.endtime, 
-                                usertask.token,
-                                usertask.path,
-                                1);
-
         if (query_type) // Sam, AI dds Agent
         {
+            // Write Tp_Query
+            ddswriter.query_writer(usertask.username, 
+                                    usertask.ai_type, 
+                                    usertask.partition_device, 
+                                    usertask.query_type, 
+                                    usertask.starttime, 
+                                    usertask.endtime, 
+                                    usertask.token,
+                                    usertask.path,
+                                    1);
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         }
         else
@@ -380,6 +374,17 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                     std::thread readerthread(h2642ai_func);
                     readerthread.detach();
                 }
+
+                // Write Tp_Query
+                ddswriter.query_writer(usertask.username, 
+                                        usertask.ai_type, 
+                                        usertask.partition_device, 
+                                        usertask.query_type, 
+                                        usertask.starttime, 
+                                        usertask.endtime, 
+                                        usertask.token,
+                                        usertask.path,
+                                        1);
 
                 // trasfer to 'ts' format for M3U8
                 std::thread transthread(transfunc);
