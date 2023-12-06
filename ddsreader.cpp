@@ -389,7 +389,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                         continue;
                     }
                     headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                    saveAsH264File(headframebuf, count, filepath);
+                    saveAsH264File(headframebuf, count, inputpath);
                     headframebuf = {};
                     bodyframebuf = {};
                     headframebuf.insert(headframebuf.end(), h2642Ai.frame.begin(), h2642Ai.frame.end());
