@@ -36,13 +36,13 @@ class DDSReader {
         DDSReader();
         ~DDSReader();
         // DDSReader(sub_thread& sub_thread) : sub_thread_(sub_thread) {};
-        std::queue<std::vector<uint8_t>> framequeue;
         void videostream_reader(UserTask &usertask,
                                 std::string filepath,
                                 std::uint64_t port);
 
         void h2642ai_reader(UserTask &usertask,
                             std::string filepath,
+                            std::string inputpath,
                             std::uint64_t port);
         void playh264_reader(UserTask &usertask,
                             std::string filepath,

@@ -85,7 +85,12 @@
         "variant": "cpp",
         "*.ipp": "cpp",
         "filesystem": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "cassert": "cpp",
+        "cerrno": "cpp",
+        "cfloat": "cpp",
+        "ciso646": "cpp",
+        "climits": "cpp"
     },
     "C_Cpp.errorSquiggles": "enabled",
     "git.ignoreLimitWarning": true,

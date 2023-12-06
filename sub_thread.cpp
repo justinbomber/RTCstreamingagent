@@ -42,37 +42,8 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
     outFile.close();
 }
 
-void delete_all_files(const std::filesystem::path& path) {
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
-        if (entry.is_regular_file()) {
-            std::filesystem::remove(entry.path());
-        }
-         std::filesystem::remove_all(entry.path());
-    }
-}
-
-void appendToM3U8File(std::string m3u8name, const std::string &directory, const std::string &newString)
+bool checkmetadata(std::string source, int startTime, int endTime)
 {
-    std::string filename = directory + m3u8name + ".m3u8";
-
-    // 打開已存在的文件用於追加
-    std::ofstream outFile(filename, std::ios::app);
-
-    // 檢查文件是否成功打開
-    if (!outFile)
-    {
-        std::cerr << "無法打開文件" << std::endl;
-        return;
-    }
-    outFile << "#EXTINF:1.000000,\n";
-    outFile << newString;
-    outFile << "#EXT-X-DISCONTINUITY\n";
-
-    // 關閉文件
-    outFile.close();
-}
-
-bool checkmetadata(std::string source, int startTime, int endTime){
     PostgresConnector postgresConnector;
     bool isOpen = postgresConnector.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433);
 
@@ -82,124 +53,55 @@ bool checkmetadata(std::string source, int startTime, int endTime){
         std::cout << "Database cannot be opened." << std::endl;
 
     std::string command =
-            "select content_id, file_name, has_pre_ai from "
-            "tb_cam_ipfs_controller_meta"
-            " where source = '" +
-            source + "' and unix_time_end > " + std::to_string(startTime) +
-            " and unix_time_start < " + std::to_string(endTime) +
-            " and status = '5'" +
-            " order by source, unix_time_start, unix_time_end";
+        "select content_id, file_name, has_pre_ai from "
+        "tb_cam_ipfs_controller_meta"
+        " where source = '" +
+        source + "' and unix_time_end > " + std::to_string(startTime) +
+        " and unix_time_start < " + std::to_string(endTime) +
+        " and status = '5'" +
+        " order by source, unix_time_start, unix_time_end";
     pqxx::result ipfsRows = postgresConnector.executeResultset(command);
     int count = 0;
     bool closedb = postgresConnector.close();
-    for (auto const &row : ipfsRows){
+    for (auto const &row : ipfsRows)
+    {
         count++;
     }
 
-    if(count > 0)
+    if (count > 0)
         return true;
     else
         return false;
 }
 
-void transferH264(const std::string &targetFolder, UserTask &usertask, std::string m3u8name, const std::string &inputfolder)
+void checkfile(const std::string &targetFolder, UserTask &usertask)
 {
     int should_out = 0;
-    bool is_first = true;
     int traffic_status = 1;
     while (usertask.threadcontroll)
     {
-         
+
         int file_count = 0;
-        for (const auto& entry : std::filesystem::directory_iterator(inputfolder))
-            if (entry.is_regular_file()) 
+        for (const auto &entry : std::filesystem::directory_iterator(targetFolder))
+            if (entry.is_regular_file())
                 ++file_count;
         if (file_count > 1)
-            traffic_status = 2;
-        else
-            traffic_status = 1;
-        // if(traffic_status != last_taraffic_status)
-        // {
-        //     if (traffic_status == 2)
-        //         ddswriter.query_writer(usertask.username, 
-        //                                 usertask.ai_type, 
-        //                                 usertask.partition_device, 
-        //                                 usertask.query_type, 
-        //                                 usertask.starttime, 
-        //                                 usertask.endtime, 
-        //                                 usertask.token,
-        //                                 usertask.path,
-        //                                 2);
-        //     else
-        //         ddswriter.query_writer(usertask.username, 
-        //                                 usertask.ai_type, 
-        //                                 usertask.partition_device, 
-        //                                 usertask.query_type, 
-        //                                 usertask.starttime, 
-        //                                 usertask.endtime,
-        //                                 usertask.token,
-        //                                 usertask.path,
-        //                                 1);
-        //     last_taraffic_status = traffic_status;
-        // }
-
-        for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
         {
-            if (entry.is_regular_file())
-            {
-                const std::string extension = entry.path().extension().string();
-
-                if (extension == ".h264")
-                {
-                    if (is_first)
-                    {
-                        auto transferstart = std::chrono::high_resolution_clock::now();
-                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            transferstart.time_since_epoch()
-                        ).count();
-                        std::cout << "=======================" << std::endl;
-                        std::cout << " start transfer to ts --->>>" << transferepoch << std::endl;
-                        std::cout << "+++++++++++++++++++++++" << std::endl;
-                    }
-                    if (!usertask.threadcontroll)
-                        return;
-                    const std::string filenameWithoutExt = entry.path().stem().string();
-                    std::string m3u8input = "'" + filenameWithoutExt + ".ts'\n";
-                    appendToM3U8File(m3u8name, targetFolder, m3u8input);
-                    std::string cmdline;
-                    cmdline = "ffmpeg -i " + inputfolder + filenameWithoutExt + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 1920x1080 " +
-                                        targetFolder + filenameWithoutExt + ".ts && mv " +
-                                        targetFolder + filenameWithoutExt + ".ts " +
-                                        targetFolder + "\"\'" + filenameWithoutExt + ".ts\'\"";
-                    system(cmdline.c_str());
-
-                    std::filesystem::remove(entry.path());
-                    if (is_first)
-                    {
-                        auto transferstart = std::chrono::high_resolution_clock::now();
-                        auto transferepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            transferstart.time_since_epoch()
-                        ).count();
-                        std::cout << "=======================" << std::endl;
-                        std::cout << " finish transfer to ts --->>>" << transferepoch << std::endl;
-                        std::cout << "+++++++++++++++++++++++" << std::endl;
-                        std::lock_guard<std::mutex> lock(mtx);
-                        hasfile = true;
-                        cv.notify_one();
-                        is_first = false;
-                    }
-                }
-            }
+            std::lock_guard<std::mutex> lock(mtx);
+            hasfile = true;
+            cv.notify_one();
+            break;
+        } else {
+            continue;
         }
-        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
-    delete_all_files(inputfolder + "/..");
-    delete_all_files(targetFolder + "/..");
 }
 
-int find_available_port(int start_port, int socket_type, const char* ip_address = "0.0.0.0") {
+int find_available_port(int start_port, int socket_type, const char *ip_address = "0.0.0.0")
+{
     int sock = socket(AF_INET, socket_type, 0);
-    if (sock == -1) {
+    if (sock == -1)
+    {
         std::cerr << "無法創建 socket\n";
         return -1;
     }
@@ -208,9 +110,11 @@ int find_available_port(int start_port, int socket_type, const char* ip_address 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(ip_address);
 
-    for (int port = start_port; port < 65535; ++port) {
+    for (int port = start_port; port < 65535; ++port)
+    {
         addr.sin_port = htons(port);
-        if (bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
+        if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0)
+        {
             close(sock);
             return port;
         }
@@ -220,7 +124,8 @@ int find_available_port(int start_port, int socket_type, const char* ip_address 
     return -1;
 }
 
-void create_userfolder(std::string path, std::string partition_device, std::string username, std::string rootpath, std::time_t timestampnow){
+void create_userfolder(std::string path, std::string partition_device, std::string username, std::string rootpath, std::time_t timestampnow)
+{
     std::vector<std::filesystem::path> filevec;
     std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
     std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
@@ -239,7 +144,6 @@ void create_userfolder(std::string path, std::string partition_device, std::stri
     std::filesystem::path outputdevicePath = userPath / username;
     filevec.push_back(outputdevicePath);
 
-
     // create non existing directory
     for (auto &path : filevec)
     {
@@ -256,7 +160,7 @@ void create_userfolder(std::string path, std::string partition_device, std::stri
     createM3U8File(catchoutput, path);
 }
 
-std::string sub_thread::sub_thread_task(UserTask & usertask, 
+std::string sub_thread::sub_thread_task(UserTask &usertask,
                                         portNumBits udpport,
                                         std::string udpip,
                                         std::string ipaddr,
@@ -283,7 +187,6 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
     std::string catchinput = rootpath + "/catchinput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
     std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
 
-    
     // gen port num start from 8554
     int serverport = 8554;
     // portNumBits udpport = 1250;
@@ -301,14 +204,15 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                                    catchinput,
                                    udpport);
     auto h2642ai_func = std::bind(&DDSReader::h2642ai_reader, &ddsreader,
-                                   std::ref(usertask),
-                                   catchinput,
-                                   udpport);
-    auto transfunc = std::bind(&transferH264, catchoutput, std::ref(usertask), path, catchinput);
-    auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager, 
+                                  std::ref(usertask),
+                                  catchinput,
+                                  udpport);
+    // auto transfunc = std::bind(&checkfile, catchoutput, std::ref(usertask));
+    auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager,
                                     serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport);
+    auto checkfile_func = std::bind(&checkfile, catchoutput, std::ref(usertask));
     if (ai_type.size() == 0 && query_type)
     {
         // start rtps server
@@ -329,22 +233,25 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         }
         json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         int time_duration = 0;
-        if (usertask.resolution == "1080"){
+        if (usertask.resolution == "1080")
+        {
             time_duration = 500;
-        } else {
+        }
+        else
+        {
             time_duration = 1500;
         }
         auto start = std::chrono::steady_clock::now();
         while (!usertask.videocontroll)
         {
             auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration){
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
+            {
                 json_obj["url"] = "None";
                 break;
             }
             // start = std::chrono::steady_clock::now();
         }
-        
     }
     else
     {
@@ -353,20 +260,21 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
         if (query_type) // Sam, AI dds Agent
         {
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-            ddswriter.query_writer(usertask.username, 
-                                    usertask.ai_type, 
-                                    usertask.partition_device, 
-                                    usertask.query_type, 
-                                    usertask.starttime, 
-                                    usertask.endtime, 
-                                    usertask.token,
-                                    usertask.path,
-                                    1);
+            ddswriter.query_writer(usertask.username,
+                                   usertask.ai_type,
+                                   usertask.partition_device,
+                                   usertask.query_type,
+                                   usertask.starttime,
+                                   usertask.endtime,
+                                   usertask.token,
+                                   usertask.path,
+                                   1);
         }
         else
         // if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
         {
-            if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime)){
+            if (checkmetadata(usertask.partition_device, usertask.starttime, usertask.endtime))
+            {
                 create_userfolder(path, partition_device, username, rootpath, timestampnow);
 
                 if (ai_type.size() == 0)
@@ -374,48 +282,55 @@ std::string sub_thread::sub_thread_task(UserTask & usertask,
                     // Read playh264 topic;
                     std::thread readerthread(playh264_func);
                     readerthread.detach();
-                } else {
+                }
+                else
+                {
                     // Read h2642ai topic;
                     std::thread readerthread(h2642ai_func);
                     readerthread.detach();
                 }
-                ddswriter.query_writer(usertask.username, 
-                                        usertask.ai_type, 
-                                        usertask.partition_device, 
-                                        usertask.query_type, 
-                                        usertask.starttime, 
-                                        usertask.endtime, 
-                                        usertask.token,
-                                        usertask.path,
-                                        1);
+                ddswriter.query_writer(usertask.username,
+                                       usertask.ai_type,
+                                       usertask.partition_device,
+                                       usertask.query_type,
+                                       usertask.starttime,
+                                       usertask.endtime,
+                                       usertask.token,
+                                       usertask.path,
+                                       1);
 
                 // trasfer to 'ts' format for M3U8
-                // std::thread transthread(transfunc);
-                // transthread.detach();
+                std::thread checkfilethread(checkfile_func);
+                checkfilethread.detach();
 
                 int fileexist = 0;
                 auto start = std::chrono::steady_clock::now();
                 std::unique_lock<std::mutex> lock(mtx);
 
-                if(cv.wait_for(lock, std::chrono::seconds(10), []{ return hasfile; }))
+                if (cv.wait_for(lock, std::chrono::seconds(10), []
+                                { return hasfile; }))
                 {
-                    json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" + 
-                    // json_obj["url"] = "/public/ramdisk/catchoutput/" + 
-                                        partition_device + "/" + 
-                                        username + "/" +
-                                        std::to_string(timestampnow) + "/" +
-                                        path + ".m3u8";
-                } else {
+                    json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" +
+                                      // json_obj["url"] = "/public/ramdisk/catchoutput/" +
+                                      partition_device + "/" +
+                                      username + "/" +
+                                      std::to_string(timestampnow) + "/" +
+                                      path + ".m3u8";
+                }
+                else
+                {
                     json_obj["url"] = "None";
                 }
-            } else {
+            }
+            else
+            {
                 json_obj["url"] = "None";
             }
-        }                                                                                                            
+        }
     }
     json_obj["token"] = token;
     json_obj["path"] = path;
-    json_obj["type"]= "video";
+    json_obj["type"] = "video";
     std::cout << json_obj << std::endl;
     hasfile = false;
 
