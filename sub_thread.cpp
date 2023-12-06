@@ -91,7 +91,9 @@ void checkfile(const std::string &targetFolder, UserTask &usertask)
             hasfile = true;
             cv.notify_one();
             break;
-        } else {
+        }
+        else
+        {
             continue;
         }
     }
@@ -205,6 +207,7 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                                    udpport);
     auto h2642ai_func = std::bind(&DDSReader::h2642ai_reader, &ddsreader,
                                   std::ref(usertask),
+                                  catchoutput,
                                   catchinput,
                                   udpport);
     // auto transfunc = std::bind(&checkfile, catchoutput, std::ref(usertask));
@@ -260,15 +263,15 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
         if (query_type) // Sam, AI dds Agent
         {
             json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
-            ddswriter.query_writer(usertask.username, 
-                                    usertask.ai_type, 
-                                    usertask.partition_device, 
-                                    usertask.query_type, 
-                                    usertask.starttime, 
-                                    usertask.endtime, 
-                                    usertask.token,
-                                    usertask.path,
-                                    1);
+            ddswriter.query_writer(usertask.username,
+                                   usertask.ai_type,
+                                   usertask.partition_device,
+                                   usertask.query_type,
+                                   usertask.starttime,
+                                   usertask.endtime,
+                                   usertask.token,
+                                   usertask.path,
+                                   1);
         }
         else
         // if (ai_type.size() == 0 && !query_type) // Sam, IPFS Agent
@@ -289,26 +292,16 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                     std::thread readerthread(h2642ai_func);
                     readerthread.detach();
                 }
-                ddswriter.query_writer(usertask.username,
-                                    usertask.ai_type,
-                                    usertask.partition_device,
-                                    usertask.query_type,
-                                    usertask.starttime,
-                                    usertask.endtime,
-                                    usertask.token,
-                                    usertask.path,
-                                    1);
-
                 // Write Tp_Query
-                ddswriter.query_writer(usertask.username, 
-                                        usertask.ai_type, 
-                                        usertask.partition_device, 
-                                        usertask.query_type, 
-                                        usertask.starttime, 
-                                        usertask.endtime, 
-                                        usertask.token,
-                                        usertask.path,
-                                        1);
+                ddswriter.query_writer(usertask.username,
+                                       usertask.ai_type,
+                                       usertask.partition_device,
+                                       usertask.query_type,
+                                       usertask.starttime,
+                                       usertask.endtime,
+                                       usertask.token,
+                                       usertask.path,
+                                       1);
 
                 // trasfer to 'ts' format for M3U8
                 std::thread checkfilethread(checkfile_func);
