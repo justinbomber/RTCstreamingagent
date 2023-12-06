@@ -107,7 +107,7 @@ void transferdata(const std::string &targetFolder,
     int count = 0;
     bool should_out = 0;
     while(usertask.threadcontroll){
-        int file_count = 1;
+        int file_count = 0;
         for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
             if (entry.is_regular_file())
                 ++file_count;
@@ -141,8 +141,8 @@ void transferdata(const std::string &targetFolder,
                 std::cout << "=======================" << std::endl;
                 std::cout << "finish transfer h264 to ts data --->>>" << receivedwsepoch << std::endl;
                 std::cout << "+++++++++++++++++++++++" << std::endl;
-                should_out = true;
             }
+            should_out = true;
         } else {
             if(should_out)
                 break;
@@ -495,6 +495,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playh264.sequence_number = data.value<uint32_t>("sequence_number");
                 playh264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playh264.frame = data.get_values<uint8_t>("frame");
+                std::cout << "frame_bytes: " << playh264.frame_bytes << std::endl;
                 if (first){
                     auto now264frame = std::chrono::high_resolution_clock::now();
                     auto recived264frameepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
