@@ -30,6 +30,8 @@ using tcp = boost::asio::ip::tcp;
 bool globalthread = true;
 
 CommonStruct commonstruct;
+
+
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {

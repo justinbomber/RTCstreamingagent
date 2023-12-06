@@ -106,14 +106,22 @@ void transferdata(const std::string &targetFolder,
 {
     int count = 0;
     bool should_out = 0;
-    while(true){
-        int file_count = 0;
+    while(usertask.threadcontroll){
+        int file_count = 1;
         for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
             if (entry.is_regular_file())
                 ++file_count;
         if (file_count > 0)
         {
-            should_out = 1;
+            if (!should_out){
+                auto nowws = std::chrono::high_resolution_clock::now();
+                auto receivedwsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        nowws.time_since_epoch())
+                                        .count();
+                std::cout << "=======================" << std::endl;
+                std::cout << "start transfer h264 to ts data --->>>" << receivedwsepoch << std::endl;
+                std::cout << "+++++++++++++++++++++++" << std::endl;
+            }
             std::string cmdline;
             appendToM3U8File(usertask.path, targetFolder, "\'sample-" + std::to_string(count) + ".ts\'");
             std::string filefix = "sample-" + std::to_string(count);
@@ -125,15 +133,28 @@ void transferdata(const std::string &targetFolder,
             system(cmdline.c_str());
             std::filesystem::remove(targetfile);
             count++;
+            if (!should_out){
+                auto nowws = std::chrono::high_resolution_clock::now();
+                auto receivedwsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                        nowws.time_since_epoch())
+                                        .count();
+                std::cout << "=======================" << std::endl;
+                std::cout << "finish transfer h264 to ts data --->>>" << receivedwsepoch << std::endl;
+                std::cout << "+++++++++++++++++++++++" << std::endl;
+                should_out = true;
+            }
         } else {
-            if (should_out)
+            if(should_out)
                 break;
             else
                 continue;
         }
     }
-    // delete_all_files(inputfolder + "/..");
-    // delete_all_files(targetFolder + "/..");
+    while (usertask.threadcontroll){
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+    std::filesystem::remove_all(inputfolder);
+    std::filesystem::remove_all(targetFolder);
 }
 
 void DDSReader::videostream_reader(UserTask &usertask,
@@ -212,7 +233,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
         now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= time_duration)
         {
-            usertask.threadcontroll = false;
+            // usertask.threadcontroll = false;
             break;
         }
 
@@ -453,7 +474,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
-            usertask.threadcontroll = false;
+            // usertask.threadcontroll = false;
             return;
         }
         for (auto sample : samples)
