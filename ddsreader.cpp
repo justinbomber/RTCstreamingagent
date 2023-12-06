@@ -40,6 +40,27 @@ void sendLargeData(int sock, const uint8_t *data, size_t dataSize, struct sockad
     }
 }
 
+void appendToM3U8File(std::string m3u8name, const std::string &directory, const std::string &newString)
+{
+    std::string filename = directory + m3u8name + ".m3u8";
+
+    // 打開已存在的文件用於追加
+    std::ofstream outFile(filename, std::ios::app);
+
+    // 檢查文件是否成功打開
+    if (!outFile)
+    {
+        std::cerr << "無法打開文件" << std::endl;
+        return;
+    }
+    outFile << "#EXTINF:1.000000,\n";
+    outFile << newString << "\n";
+    outFile << "#EXT-X-DISCONTINUITY\n";
+
+    // 關閉文件
+    outFile.close();
+}
+
 void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filepath)
 {
     auto savefiletime = std::chrono::high_resolution_clock::now();
@@ -67,7 +88,54 @@ void saveAsH264File(const std::vector<uint8_t> &data, int num, std::string filep
     std::cout << "+++++++++++++++++++++++" << std::endl;
 }
 
-// todo :: clean file path
+void delete_all_files(const std::filesystem::path &path)
+{
+    for (const auto &entry : std::filesystem::directory_iterator(path))
+    {
+        if (entry.is_regular_file())
+        {
+            std::filesystem::remove(entry.path());
+        }
+        std::filesystem::remove_all(entry.path());
+    }
+}
+
+void transferdata(const std::string &targetFolder, 
+                UserTask &usertask, 
+                const std::string &inputfolder)
+{
+    int count = 0;
+    bool should_out = 0;
+    while(true){
+        int file_count = 0;
+        for (const auto &entry : std::filesystem::directory_iterator(inputfolder))
+            if (entry.is_regular_file())
+                ++file_count;
+        if (file_count > 0)
+        {
+            should_out = 1;
+            std::string cmdline;
+            appendToM3U8File(usertask.path, targetFolder, "\'sample-" + std::to_string(count) + ".ts\'");
+            std::string filefix = "sample-" + std::to_string(count);
+            std::filesystem::path targetfile = inputfolder + filefix + ".h264";
+            cmdline = "ffmpeg -i " + inputfolder + filefix + ".h264 -preset ultrafast -c:v libx264 -c:a aac -s 1920x1080 " +
+                                targetFolder + filefix + ".ts && mv " +
+                                targetFolder + filefix + ".ts " +
+                                targetFolder + "\"\'" + filefix + ".ts\'\"";
+            system(cmdline.c_str());
+            std::filesystem::remove(targetfile);
+            count++;
+        } else {
+            if (should_out)
+                break;
+            else
+                continue;
+        }
+    }
+    // delete_all_files(inputfolder + "/..");
+    // delete_all_files(targetFolder + "/..");
+}
+
 void DDSReader::videostream_reader(UserTask &usertask,
                                    std::string filepath,
                                    std::uint64_t port)
@@ -232,6 +300,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
 
 void DDSReader::h2642ai_reader(UserTask &usertask,
                                 std::string filepath,
+                                std::string inputpath,
                                 std::uint64_t port)
 {
     auto nowreaderstart = std::chrono::high_resolution_clock::now();
@@ -241,24 +310,6 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     std::cout << "=======================" << std::endl;
     std::cout << "start h264ai reader time --->>>" << startreaderepoch << std::endl;
     std::cout << "+++++++++++++++++++++++" << std::endl;
-
-    int sock;
-    struct sockaddr_in addr;
-    const char *multicast_ip = "239.255.42.42";
-    std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
-
-    // create socket connection
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        perror("socket() failed");
-        return;
-    }
-
-    // initialize
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(multicast_ip);
-    addr.sin_port = htons(port);
 
     // Set partition
     std::string partition = usertask.partition_device + "/" + usertask.username;
@@ -279,6 +330,13 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
     bool first = true;
+
+    auto transfer_t = std::bind(&transferdata, 
+                                filepath, 
+                                std::ref(usertask), 
+                                inputpath);
+    std::thread transfer_thread(transfer_t);
+    transfer_thread.detach();
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -331,12 +389,6 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
                         continue;
                     }
                     headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                    // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
-                    // if (count % 30 == 0)
-                    // {
-                    //     saveAsH264File(framebuffer, count, filepath);
-                    //     framebuffer = {};
-                    // }
                     saveAsH264File(headframebuf, count, filepath);
                     headframebuf = {};
                     bodyframebuf = {};
@@ -355,6 +407,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
 
 void DDSReader::playh264_reader(UserTask &usertask,
                                 std::string filepath,
+                                std::string inputpath,
                                 std::uint64_t port)
 {
     auto nowreaderstart = std::chrono::high_resolution_clock::now();
@@ -364,24 +417,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
     std::cout << "=======================" << std::endl;
     std::cout << "start playh264 reader time --->>>" << startreaderepoch << std::endl;
     std::cout << "+++++++++++++++++++++++" << std::endl;
-
-    int sock;
-    struct sockaddr_in addr;
-    const char *multicast_ip = "239.255.42.42";
-    std::cout << "multicast_ip,prot: " << multicast_ip << ":" << port << std::endl;
-
-    // create socket connection
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    {
-        perror("socket() failed");
-        return;
-    }
-
-    // initialize
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(multicast_ip);
-    addr.sin_port = htons(port);
 
     // Set partition
     std::string partition = usertask.partition_device + "/" + usertask.username;
@@ -402,6 +437,13 @@ void DDSReader::playh264_reader(UserTask &usertask,
     // std::vector<uint8_t> framebuffer = {};
     auto start = std::chrono::steady_clock::now();
     bool first = true;
+
+    auto transfer_t = std::bind(&transferdata, 
+                                filepath, 
+                                std::ref(usertask), 
+                                inputpath);
+    std::thread transfer_thread(transfer_t);
+    transfer_thread.detach();
 
     // Read the data sample
     while (usertask.threadcontroll)
@@ -454,13 +496,7 @@ void DDSReader::playh264_reader(UserTask &usertask,
                         continue;
                     }
                     headframebuf.insert(headframebuf.end(), bodyframebuf.begin(), bodyframebuf.end());
-                    // framebuffer.insert(framebuffer.end(), headframebuf.begin(), headframebuf.end());
-                    // if (count % 30 == 0)
-                    // {
-                    //     saveAsH264File(framebuffer, count, filepath);
-                    //     framebuffer = {};
-                    // }
-                    saveAsH264File(headframebuf, count, filepath);
+                    saveAsH264File(headframebuf, count, inputpath);
                     headframebuf = {};
                     bodyframebuf = {};
                     headframebuf.insert(headframebuf.end(), playh264.frame.begin(), playh264.frame.end());

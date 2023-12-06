@@ -22,6 +22,10 @@
 #include "BasicUsageEnvironment.hh"
 #include "liveMedia.hh"
 #include "ddsStreamTransformer.hpp"
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
 
 class DDSReader {
     private:
@@ -38,9 +42,11 @@ class DDSReader {
 
         void h2642ai_reader(UserTask &usertask,
                             std::string filepath,
+                            std::string inputpath,
                             std::uint64_t port);
         void playh264_reader(UserTask &usertask,
                             std::string filepath,
+                            std::string inputpath,
                             std::uint64_t port);
 
 
