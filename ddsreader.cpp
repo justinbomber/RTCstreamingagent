@@ -495,7 +495,6 @@ void DDSReader::playh264_reader(UserTask &usertask,
                 playh264.sequence_number = data.value<uint32_t>("sequence_number");
                 playh264.frame_bytes = data.value<int32_t>("frame_bytes");
                 playh264.frame = data.get_values<uint8_t>("frame");
-                std::cout << "frame_bytes: " << playh264.frame_bytes << std::endl;
                 if (first){
                     auto now264frame = std::chrono::high_resolution_clock::now();
                     auto recived264frameepoch = std::chrono::duration_cast<std::chrono::milliseconds>(

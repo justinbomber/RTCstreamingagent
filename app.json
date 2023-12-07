@@ -22,7 +22,7 @@
     "local": {
         "serverip":"10.1.1.128",
         "hisrootpath": "../../dm_front_end/public/ramdisk",
-        "ddsdomainid": 66,
+        "ddsdomainid": 33,
         "udpip": "239.255.42.42",
         "udpport": 1250
     }
