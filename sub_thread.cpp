@@ -6,9 +6,6 @@
 #include "commonstruct.h"
 
 using namespace std;
-std::mutex mtx;
-std::condition_variable cv;
-bool hasfile = false;
 
 sub_thread::sub_thread()
 {
@@ -72,31 +69,6 @@ bool checkmetadata(std::string source, int startTime, int endTime)
         return true;
     else
         return false;
-}
-
-void checkfile(const std::string &targetFolder, UserTask &usertask)
-{
-    int should_out = 0;
-    int traffic_status = 1;
-    while (usertask.threadcontroll)
-    {
-
-        int file_count = 0;
-        for (const auto &entry : std::filesystem::directory_iterator(targetFolder))
-            if (entry.is_regular_file())
-                ++file_count;
-        if (file_count > 1)
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            hasfile = true;
-            cv.notify_one();
-            break;
-        }
-        else
-        {
-            continue;
-        }
-    }
 }
 
 int find_available_port(int start_port, int socket_type, const char *ip_address = "0.0.0.0")
@@ -215,25 +187,13 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                                     serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport);
-    auto checkfile_func = std::bind(&checkfile, catchoutput, std::ref(usertask));
     if (ai_type.size() == 0 && query_type)
     {
         // start rtps server
         std::thread rtpsserverthread(rtpsserverfunc);
         rtpsserverthread.detach();
-        // Read VideoStream topic;
-        if (resolution == "1080")
-        {
-            // Read VideoStream topic;
-            std::thread readerthread(videostream_func);
-            readerthread.detach();
-        }
-        else
-        {
-            // Read VideoStream topic;
-            std::thread readerthread(videostream_func);
-            readerthread.detach();
-        }
+        std::thread readerthread(videostream_func);
+        readerthread.detach();
         json_obj["url"] = "rtsp://" + ipaddr + ":" + std::to_string(serverport) + "/" + usertask.partition_device + "/" + usertask.username;
         int time_duration = 0;
         if (usertask.resolution == "1080")
@@ -303,27 +263,33 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                                        usertask.path,
                                        1);
 
-                // trasfer to 'ts' format for M3U8
-                std::thread checkfilethread(checkfile_func);
-                checkfilethread.detach();
-
-                int fileexist = 0;
                 auto start = std::chrono::steady_clock::now();
-                std::unique_lock<std::mutex> lock(mtx);
-
-                if (cv.wait_for(lock, std::chrono::seconds(10), []
-                                { return hasfile; }))
+                while (usertask.threadcontroll)
                 {
-                    json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" +
-                                      // json_obj["url"] = "/public/ramdisk/catchoutput/" +
-                                      partition_device + "/" +
-                                      username + "/" +
-                                      std::to_string(timestampnow) + "/" +
-                                      path + ".m3u8";
-                }
-                else
-                {
-                    json_obj["url"] = "None";
+                    int file_count = 0;
+                    for (const auto &entry : std::filesystem::directory_iterator(catchoutput))
+                        if (entry.is_regular_file())
+                            ++file_count;
+                    auto now = std::chrono::steady_clock::now();
+                    if (file_count > 1)
+                    {
+                        json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" +
+                                        // json_obj["url"] = "/public/ramdisk/catchoutput/" +
+                                        partition_device + "/" +
+                                        username + "/" +
+                                        std::to_string(timestampnow) + "/" +
+                                        path + ".m3u8";
+                        break;
+                    }
+                    else 
+                    {
+                        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= 5000)
+                        {
+                            json_obj["url"] = "None";
+                            break;
+                        }
+                        continue;
+                    }
                 }
             }
             else
@@ -336,7 +302,6 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
     json_obj["path"] = path;
     json_obj["type"] = "video";
     std::cout << json_obj << std::endl;
-    hasfile = false;
 
     // 序列化 JSON 對象為字符串
     return json_obj.dump();
