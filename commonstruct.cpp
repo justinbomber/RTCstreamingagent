@@ -3,9 +3,7 @@
 
 
 
-
 std::map<UserDevice, UserTask> taskmanager;
-std::int32_t domain_id = 66;
 std::string ddscamqos = "ddscamxml/ddscam_qos.xml";
 std::string paasqos = "paasxml/paas_qos.xml";
 namespace beast = boost::beast;
@@ -47,9 +45,54 @@ CommonStruct::CommonStruct():resolver(ioc), ws(ioc)
             paas_typedef_path = jsonObject.get<std::string>("typedef");
         }
     }
-    domain_id = local_domainid;
-    ddscamqos = ddscam_qos_path;
-    paasqos = paas_qos_path;
+}
+
+std::int32_t getDomainId()
+{
+    AppConfig cfg;
+    if (cfg.openJsonFile("../app.json"))
+    {
+        // std::cout << "Opened app.json." << std::endl;
+        boost::property_tree::ptree jsonObject;
+        if (cfg.getObjectValue("local", jsonObject))
+        {
+            int32_t domainid = jsonObject.get<std::int32_t>("ddsdomainid");
+            return domainid;
+        }
+    }
+    return 66;
+}
+
+std::string getddscamqos()
+{
+    AppConfig cfg;
+    if (cfg.openJsonFile("../app.json"))
+    {
+        // std::cout << "Opened app.json." << std::endl;
+        boost::property_tree::ptree jsonObject;
+        if (cfg.getObjectValue("ddscam", jsonObject))
+        {
+            std::string qos = jsonObject.get<std::string>("qos");
+            return qos;
+        }
+    }
+    return "ddscamxml/ddscam_qos.xml";
+}
+
+std::string getpaasqos()
+{
+    AppConfig cfg;
+    if (cfg.openJsonFile("../app.json"))
+    {
+        // std::cout << "Opened app.json." << std::endl;
+        boost::property_tree::ptree jsonObject;
+        if (cfg.getObjectValue("paas", jsonObject))
+        {
+            std::string qos = jsonObject.get<std::string>("qos");
+            return qos;
+        }
+    }
+    return "paasxml/paas_qos.xml";
 }
 
 void CommonStruct::disconnect() {
@@ -153,15 +196,15 @@ beast::flat_buffer CommonStruct::read() {
 
 
 // Define ddscam tp_videostream topic and qos
-dds::domain::DomainParticipant ddscam_participant(domain_id);
-dds::core::QosProvider ddscam_qos(ddscamqos);
+dds::domain::DomainParticipant ddscam_participant(getDomainId());
+dds::core::QosProvider ddscam_qos(getddscamqos());
 
 const dds::core::xtypes::DynamicType &mytypeVideoStream = ddscam_qos.extensions().type("DdsCam::VideoStream");
 dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream(ddscam_participant, "Tp_VideoStream", mytypeVideoStream);
 
 // Define paas tp_playh264 topic and qos
-dds::domain::DomainParticipant paas_participant(domain_id);
-dds::core::QosProvider paas_qos(paasqos);
+dds::domain::DomainParticipant paas_participant(getDomainId());
+dds::core::QosProvider paas_qos(getpaasqos());
 const dds::core::xtypes::DynamicType &mytypeH2642Ai = paas_qos.extensions().type("Paas::Cam::H264Type");
 dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai(paas_participant, "Tp_H2642Ai", mytypeH2642Ai);
 
@@ -170,7 +213,4 @@ dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264(paas_participant
 
 const dds::core::xtypes::DynamicType &mytype = paas_qos.extensions().type("Paas::Cam::Query");
 dds::topic::Topic<dds::core::xtypes::DynamicData> topicQuery(paas_participant, "Tp_Query", mytype);
-
-
-
 
