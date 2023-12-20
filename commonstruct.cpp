@@ -4,8 +4,6 @@
 
 
 std::map<UserDevice, UserTask> taskmanager;
-std::string ddscamqos = "ddscamxml/ddscam_qos.xml";
-std::string paasqos = "paasxml/paas_qos.xml";
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace websocket = beast::websocket;
@@ -206,7 +204,7 @@ dds::topic::Topic<dds::core::xtypes::DynamicData> topicVideoStream(ddscam_partic
 dds::domain::DomainParticipant paas_participant(getDomainId());
 dds::core::QosProvider paas_qos(getpaasqos());
 const dds::core::xtypes::DynamicType &mytypeH2642Ai = paas_qos.extensions().type("Paas::Cam::H264Type");
-dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai(paas_participant, "Tp_H2642Ai", mytypeH2642Ai);
+dds::topic::Topic<dds::core::xtypes::DynamicData> topicH2642Ai(paas_participant, "Tp_H264His2Ai", mytypeH2642Ai);
 
 const dds::core::xtypes::DynamicType &mytypePlayH264 = paas_qos.extensions().type("Paas::Cam::PlayH264");
 dds::topic::Topic<dds::core::xtypes::DynamicData> topicPlayH264(paas_participant, "Tp_PlayH264", mytypePlayH264);
