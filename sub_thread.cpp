@@ -53,8 +53,8 @@ bool checkmetadata(std::string source, int startTime, int endTime)
         "select content_id, file_name, has_pre_ai from "
         "tb_cam_ipfs_controller_meta"
         " where source = '" +
-        source + "' and unix_time_end > " + std::to_string(startTime) +
-        " and unix_time_start < " + std::to_string(endTime) +
+        source + "' and unix_time_start >= " + std::to_string(startTime) +
+        " and unix_time_end <= " + std::to_string(endTime) +
         " and status = '5'" +
         " order by source, unix_time_start, unix_time_end";
     pqxx::result ipfsRows = postgresConnector.executeResultset(command);
