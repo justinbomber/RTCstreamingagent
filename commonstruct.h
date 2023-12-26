@@ -21,13 +21,6 @@ namespace websocket = boost::beast::websocket;
 namespace beast = boost::beast;
 using tcp = net::ip::tcp; 
 
-// struct AITask
-// {
-//   std::string token;
-//   std::string path;
-//   std::string rtps_url;
-//   bool query_type;
-// };
 // void initialize();
 struct UserTask
 {

@@ -42,7 +42,8 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
 bool checkmetadata(std::string source, int startTime, int endTime)
 {
     PostgresConnector postgresConnector;
-    bool isOpen = postgresConnector.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433);
+    bool isOpen = postgresConnector.open(commonstruct.postgresdb, commonstruct.postgresuser, commonstruct.postgrespassword, 
+                                        commonstruct.postgreshost, commonstruct.postgresport);
 
     if (isOpen)
         std::cout << "Opened database successfully." << std::endl;
