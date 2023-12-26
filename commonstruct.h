@@ -21,6 +21,13 @@ namespace websocket = boost::beast::websocket;
 namespace beast = boost::beast;
 using tcp = net::ip::tcp; 
 
+// struct AITask
+// {
+//   std::string token;
+//   std::string path;
+//   std::string rtps_url;
+//   bool query_type;
+// };
 // void initialize();
 struct UserTask
 {
@@ -37,7 +44,7 @@ struct UserTask
   bool threadcontroll;
   std::time_t timestampnow;
   bool videocontroll = false;
-
+  std::string rtsp_url = "None";
 
   bool operator==(const UserTask &other) const
   {
@@ -52,7 +59,8 @@ struct UserTask
         && resolution == other.resolution
         && activate == other.activate
         && threadcontroll == other.threadcontroll
-        && videocontroll == other.videocontroll;
+        && videocontroll == other.videocontroll
+        && rtsp_url == other.rtsp_url;
   }
 };
 struct UserDevice
