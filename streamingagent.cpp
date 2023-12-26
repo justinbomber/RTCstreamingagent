@@ -31,7 +31,6 @@ bool globalthread = true;
 
 CommonStruct commonstruct;
 
-
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
@@ -173,10 +172,12 @@ int main(int argc, char *argv[])
             usertask.query_type = json_obj["query_type"].get<std::int8_t>();
             usertask.starttime = json_obj["starttime"].get<std::int64_t>();
             usertask.endtime = json_obj["endtime"].get<std::int64_t>();
-            usertask.path = removeSlash(json_obj["path"].get<std::string>());
+            usertask.path = removeslash(json_obj["path"].get<std::string>());
             usertask.resolution = json_obj["resolution"].get<std::string>();
             usertask.activate = json_obj["activate"].get<bool>();
             usertask.threadcontroll = true;
+            if (json_obj.contains("rtsp_url"))
+                usertask.rtsp_url = json_obj["rtsp_url"].get<std::string>();
         }
         catch (std::exception &e)
         {
@@ -190,48 +191,44 @@ int main(int argc, char *argv[])
         }
 
         resortmap(userdevice, usertask, std::ref(taskmanager));
-        // std::this_thread::sleep_for(std::chrono::milliseconds(300));
         taskmanager[userdevice] = usertask;
 
-        if (!usertask.path.empty())
+        sub_thread instance;
+        std::string outputurl;
+        outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]),
+                                             commonstruct.local_udpport,
+                                             commonstruct.local_udpip,
+                                             ipaddr,
+                                             commonstruct.local_rootpath);
+
+        if (usertask.ai_type.size() > 0)
+            continue;
+        else
         {
-            sub_thread instance;
-            std::string outputurl;
-            outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]),
-                                                 commonstruct.local_udpport,
-                                                 commonstruct.local_udpip,
-                                                 ipaddr,
-                                                 commonstruct.local_rootpath);
+            commonstruct.write(outputurl);
+            auto nowwrite = std::chrono::high_resolution_clock::now();
+            auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    nowwrite.time_since_epoch())
+                                    .count();
+            std::cout << "=======================" << std::endl;
+            std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
+            std::cout << "+++++++++++++++++++++++" << std::endl;
+        }
 
-            if (usertask.ai_type.size() > 0 && usertask.query_type == 1)
-                continue;
-            else
-            {
-                commonstruct.write(outputurl);
-                auto nowwrite = std::chrono::high_resolution_clock::now();
-                auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                        nowwrite.time_since_epoch())
-                                        .count();
-                std::cout << "=======================" << std::endl;
-                std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
-                std::cout << "+++++++++++++++++++++++" << std::endl;
-            }
+        if (usertask.ai_type.size() > 0 && usertask.query_type == 0)
+        {
+            boost::property_tree::ptree jsonObject;
+            pqxxController pqc1;
+            std::string *ai_type_array = &usertask.ai_type[0];
+            jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device,
+                                                          usertask.starttime,
+                                                          usertask.endtime, ai_type_array,
+                                                          usertask.ai_type.size());
+            jsonObject.put("token", usertask.token);
+            jsonObject.put("type", "ai_time");
 
-            if (usertask.ai_type.size() > 0 && usertask.query_type == 0)
-            {
-                boost::property_tree::ptree jsonObject;
-                pqxxController pqc1;
-                std::string *ai_type_array = &usertask.ai_type[0];
-                jsonObject = pqc1.get_multitag_ai_type_intime(usertask.partition_device,
-                                                              usertask.starttime,
-                                                              usertask.endtime, ai_type_array,
-                                                              usertask.ai_type.size());
-                jsonObject.put("token", usertask.token);
-                jsonObject.put("type", "ai_time");
-
-                std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
-                commonstruct.write(inifile_text);
-            }
+            std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
+            commonstruct.write(inifile_text);
         }
     }
     commonstruct.disconnect();
