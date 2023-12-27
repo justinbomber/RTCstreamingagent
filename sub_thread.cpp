@@ -53,8 +53,8 @@ bool checkmetadata(std::string source, int startTime, int endTime)
         "select content_id, file_name, has_pre_ai from "
         "tb_cam_ipfs_controller_meta"
         " where source = '" +
-        source + "' and unix_time_start >= " + std::to_string(startTime) +
-        " and unix_time_end <= " + std::to_string(endTime) +
+        source + "' and unix_time_end > " + std::to_string(startTime) +
+        " and unix_time_start < " + std::to_string(endTime) +
         " and status = '5'" +
         " order by source, unix_time_start, unix_time_end";
     pqxx::result ipfsRows = postgresConnector.executeResultset(command);
@@ -96,46 +96,6 @@ int find_available_port(int start_port, int socket_type, const char *ip_address 
 
     close(sock);
     return -1;
-}
-
-void executeCommand(const std::string &cmd, bool &flag) {
-    pid_t pid = fork();  // 創建子進程
-    if (pid == 0) {
-        // 子進程執行 cmd
-        execl("/bin/sh", "sh", "-c", cmd.c_str(), (char *)NULL);
-        exit(127); // 只有當 execl 出錯時才會執行這裡
-    } else if (pid > 0) {
-        // 父進程
-        while (flag) {
-            int status;
-            waitpid(pid, &status, WNOHANG); // 非阻塞檢查子進程狀態
-            if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                // 如果子進程已經結束，則退出循環
-                break;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // 短暫休眠以減少 CPU 使用
-        }
-        if (!flag) {
-            // 如果 flag 被設置為 false，則殺死子進程
-            kill(pid, SIGKILL);
-        }
-    } else {
-        // fork 失敗
-        std::cerr << "Failed to fork process to execute command." << std::endl;
-    }
-}
-
-void transferRTSPtom3u8(UserTask &usertask, const std::string &outputpath, int timewindow) {
-    std::string cmdline = "ffmpeg -i " + usertask.rtsp_url + " -c copy -f hls" +
-                          " -hls_time" + std::to_string(timewindow) + " -hls_list_size 0 -hls_flags discont_start+program_date_time" +
-                          " -hls_flags append_list -hls_segment_filename \"" + outputpath + "sample_%%d.ts'\"" +
-                          " '" + outputpath + usertask.path + ".m3u8'";
-    if (usertask.threadcontroll) {
-        std::thread ffmpegThread(executeCommand, std::ref(cmdline), std::ref(usertask.threadcontroll));
-        ffmpegThread.join(); // 等待線程結束
-    } else {
-        return;
-    }
 }
 
 void create_userfolder(std::string path, std::string partition_device, std::string username, std::string rootpath, std::time_t timestampnow)
@@ -227,7 +187,6 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                                     serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport);
-    auto rtsptom3u8func = std::bind(&transferRTSPtom3u8, std::ref(usertask), catchoutput, 5);
     if (ai_type.size() == 0 && query_type)
     {
         // start rtps server
@@ -281,35 +240,28 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
             {
                 create_userfolder(path, partition_device, username, rootpath, timestampnow);
 
-                if (usertask.rtsp_url != "None")
+                if (ai_type.size() == 0)
                 {
-                    // Read h2642ai topic;
-                    // std::thread readerthread(h2642ai_func);
-                    // readerthread.detach();
-                    std::thread tranferrtspthread(rtsptom3u8func);
-                    tranferrtspthread.detach();
-                } 
+                    // Read playh264 topic;
+                    std::thread readerthread(playh264_func);
+                    readerthread.detach();
+                }
                 else
                 {
-                    // Write Tp_Query
-                    ddswriter.query_writer(usertask.username,
-                                        usertask.ai_type,
-                                        usertask.partition_device,
-                                        usertask.query_type,
-                                        usertask.starttime,
-                                        usertask.endtime,
-                                        usertask.token,
-                                        usertask.path,
-                                        1);
-                    if (ai_type.size() == 0)
-                    {
-                        // Read playh264 topic;
-                        std::thread readerthread(playh264_func);
-                        readerthread.detach();
-                    } else {
-                        return "None";
-                    }
+                    // Read h2642ai topic;
+                    std::thread readerthread(h2642ai_func);
+                    readerthread.detach();
                 }
+                // Write Tp_Query
+                ddswriter.query_writer(usertask.username,
+                                       usertask.ai_type,
+                                       usertask.partition_device,
+                                       usertask.query_type,
+                                       usertask.starttime,
+                                       usertask.endtime,
+                                       usertask.token,
+                                       usertask.path,
+                                       1);
 
                 auto start = std::chrono::steady_clock::now();
                 while (usertask.threadcontroll)
@@ -322,14 +274,14 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                     if (file_count > 1)
                     {
                         json_obj["url"] = "http://" + ipaddr + ":8080/ramdisk/catchoutput/" +
-                                          // json_obj["url"] = "/public/ramdisk/catchoutput/" +
-                                          partition_device + "/" +
-                                          username + "/" +
-                                          std::to_string(timestampnow) + "/" +
-                                          path + ".m3u8";
+                                        // json_obj["url"] = "/public/ramdisk/catchoutput/" +
+                                        partition_device + "/" +
+                                        username + "/" +
+                                        std::to_string(timestampnow) + "/" +
+                                        path + ".m3u8";
                         break;
                     }
-                    else
+                    else 
                     {
                         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() >= 5000)
                         {
