@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
             usertask.query_type = json_obj["query_type"].get<std::int8_t>();
             usertask.starttime = json_obj["starttime"].get<std::int64_t>();
             usertask.endtime = json_obj["endtime"].get<std::int64_t>();
-            usertask.path = json_obj["path"].get<std::string>();
+            usertask.path = removeslash(json_obj["path"].get<std::string>());
             usertask.resolution = json_obj["resolution"].get<std::string>();
             usertask.activate = json_obj["activate"].get<bool>();
             usertask.threadcontroll = true;
