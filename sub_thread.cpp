@@ -103,28 +103,24 @@ int find_available_port(int start_port, int socket_type, const char *ip_address 
 }
 
 void executeCommand(const std::string &cmd, bool &flag) {
-    pid_t pid = fork();  // 創建子進程
+    pid_t pid = fork();  
     if (pid == 0) {
-        // 子進程執行 cmd
         execl("/bin/sh", "sh", "-c", cmd.c_str(), (char *)NULL);
-        exit(127); // 只有當 execl 出錯時才會執行這裡
+        exit(127); 
     } else if (pid > 0) {
-        // 父進程
         while (flag) {
             int status;
-            waitpid(pid, &status, WNOHANG); // 非阻塞檢查子進程狀態
+            waitpid(pid, &status, WNOHANG); 
             if (WIFEXITED(status) || WIFSIGNALED(status)) {
-                // 如果子進程已經結束，則退出循環
+                
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(500)); // 短暫休眠以減少 CPU 使用
         }
         if (!flag) {
-            // 如果 flag 被設置為 false，則殺死子進程
             kill(pid, SIGKILL);
         }
     } else {
-        // fork 失敗
         std::cerr << "Failed to fork process to execute command." << std::endl;
     }
 }
