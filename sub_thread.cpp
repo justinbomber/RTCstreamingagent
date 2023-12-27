@@ -42,8 +42,7 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
 bool checkmetadata(std::string source, int startTime, int endTime)
 {
     PostgresConnector postgresConnector;
-    bool isOpen = postgresConnector.open(commonstruct.postgresdb, commonstruct.postgresuser, commonstruct.postgrespassword, 
-                                        commonstruct.postgreshost, commonstruct.postgresport);
+    bool isOpen = postgresConnector.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433);
 
     if (isOpen)
         std::cout << "Opened database successfully." << std::endl;
@@ -175,13 +174,13 @@ void create_userfolder(std::string path, std::string partition_device, std::stri
     createM3U8File(catchoutput, path);
 }
 
-
 std::string sub_thread::sub_thread_task(UserTask &usertask,
                                         portNumBits udpport,
                                         std::string udpip,
                                         std::string ipaddr,
                                         std::string rootpath)
 {
+
     std::string path = usertask.path;
     std::string token = usertask.token;
     std::string partition_device = usertask.partition_device;

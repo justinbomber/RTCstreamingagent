@@ -2,7 +2,7 @@
     "postgres": {
         "host": "10.1.1.200",
         "port": 5433,        
-        "dbname": "passdb_integration",
+        "dbname": "paasdb",
         "username": "dds_paas",
         "password": "postgres"
     },
