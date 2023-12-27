@@ -42,7 +42,8 @@ void createM3U8File(const std::string &directory, const std::string &m3u8name)
 bool checkmetadata(std::string source, int startTime, int endTime)
 {
     PostgresConnector postgresConnector;
-    bool isOpen = postgresConnector.open("paasdb", "dds_paas", "postgres", "10.1.1.200", 5433);
+    bool isOpen = postgresConnector.open(commonstruct.postgresdb, commonstruct.postgresuser, commonstruct.postgrespassword, 
+                                    commonstruct.postgreshost, commonstruct.postgresport);
 
     if (isOpen)
         std::cout << "Opened database successfully." << std::endl;
@@ -50,13 +51,16 @@ bool checkmetadata(std::string source, int startTime, int endTime)
         std::cout << "Database cannot be opened." << std::endl;
 
     std::string command =
-        "select content_id, file_name, has_pre_ai from "
-        "tb_cam_ipfs_controller_meta"
-        " where source = '" +
-        source + "' and unix_time_end > " + std::to_string(startTime) +
-        " and unix_time_start < " + std::to_string(endTime) +
-        " and status = '5'" +
-        " order by source, unix_time_start, unix_time_end";
+        "select * from vw_ipfs_meta_partition "
+        "where dev_partition = '" + source
+        + "' and unix_time_start <=  " + std::to_string(endTime)
+        + " and status = '5' "
+        "INTERSECT "
+        "select * from vw_ipfs_meta_partition "
+        "where dev_partition = '" + source
+        + "' and unix_time_end >=  " + std::to_string(startTime)
+        + " and status = '5' "
+        "order by unix_time_start, unix_time_end";
     pqxx::result ipfsRows = postgresConnector.executeResultset(command);
     int count = 0;
     bool closedb = postgresConnector.close();

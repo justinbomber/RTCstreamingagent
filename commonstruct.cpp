@@ -18,6 +18,14 @@ CommonStruct::CommonStruct():resolver(ioc), ws(ioc)
     {
         // std::cout << "Opened app.json." << std::endl;
         boost::property_tree::ptree jsonObject;
+        if (cfg.getObjectValue("postgres", jsonObject))
+        {
+            postgreshost = jsonObject.get<std::string>("host");
+            postgresport = jsonObject.get<int>("port");
+            postgresuser = jsonObject.get<std::string>("username");
+            postgrespassword = jsonObject.get<std::string>("password");
+            postgresdb = jsonObject.get<std::string>("dbname");
+        }
         if (cfg.getObjectValue("websocket", jsonObject))
         {
             websocketip = jsonObject.get<std::string>("ip");
