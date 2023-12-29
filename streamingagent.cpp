@@ -31,7 +31,6 @@ bool globalthread = true;
 
 CommonStruct commonstruct;
 
-
 // 定義taskmanager
 void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
@@ -44,7 +43,9 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
             if (it->first.token == userdevice.token)
             {
                 it->second.threadcontroll = false;
-                // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                it->second.rtspcontroll = 1;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
     }
@@ -55,6 +56,7 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
             if ((it->first.partition_device == userdevice.partition_device) && (it->first.token == userdevice.token))
             {
                 it->second.threadcontroll = false;
+                it->second.rtspcontroll = 1;
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
@@ -83,12 +85,14 @@ void signalHandler(int signum)
     for (std::map<UserDevice, UserTask>::iterator it = taskmanager.begin(); it != taskmanager.end(); ++it)
     {
         it->second.threadcontroll = false;
+        it->second.rtspcontroll = 1;
     }
     std::cout << "Capture \'Ctrl+C\' signal(" << signum << "), exiting..." << std::endl;
     exit(signum);
 }
 
-std::string removeSlash(const std::string& input) {
+std::string removeSlash(const std::string &input)
+{
     std::string result = input;
     result.erase(std::remove(result.begin(), result.end(), '/'), result.end());
     return result;
@@ -152,6 +156,7 @@ int main(int argc, char *argv[])
                                                it->second.path,
                                                0);
                         it->second.threadcontroll = false;
+                        it->second.rtspcontroll = 1;
                     }
                 }
                 continue;
@@ -177,6 +182,7 @@ int main(int argc, char *argv[])
             usertask.resolution = json_obj["resolution"].get<std::string>();
             usertask.activate = json_obj["activate"].get<bool>();
             usertask.threadcontroll = true;
+            usertask.rtspcontroll = 0;
         }
         catch (std::exception &e)
         {
@@ -190,7 +196,6 @@ int main(int argc, char *argv[])
         }
 
         resortmap(userdevice, usertask, std::ref(taskmanager));
-        // std::this_thread::sleep_for(std::chrono::milliseconds(300));
         taskmanager[userdevice] = usertask;
 
         if (!usertask.path.empty())

@@ -8,6 +8,7 @@
 #include "announceURL.hh"
 #include "H264UDPServerMediaSubsession.hh"
 #include "BasicUsageEnvironment.hh"
+#include "commonstruct.h"
 #include <string>
 #include <functional>
 #include <chrono>
@@ -22,7 +23,8 @@ public:
                      portNumBits const udpport,
                      const std::string udpip,
                      const std::string urlname,
-                     portNumBits const httptunnelingport);
+                     portNumBits const httptunnelingport,
+                     UserTask &usertask);
     //  bool &threadcontroll);
 
 private:

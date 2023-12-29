@@ -368,6 +368,7 @@ void DDSReader::h2642ai_reader(UserTask &usertask,
         if (std::chrono::duration_cast<std::chrono::seconds>(now - start).count() >= 5)
         {
             usertask.threadcontroll = false;
+            usertask.rtspcontroll = 1;
             return;
         }
         for (auto sample : samples)

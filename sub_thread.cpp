@@ -166,11 +166,11 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
     std::string catchoutput = rootpath + "/catchoutput/" + partition_device + "/" + username + "/" + std::to_string(timestampnow) + "/";
 
     // gen port num start from 8554
-    int serverport = 8554;
+    int theserverport = 8554;
     // portNumBits udpport = 1250;
-    portNumBits httptunnelingport = 8000;
-    serverport = find_available_port(serverport, SOCK_STREAM);
-    httptunnelingport = find_available_port(httptunnelingport, SOCK_STREAM);
+    portNumBits thehttptunnelingport = 8000;
+    int serverport = find_available_port(theserverport, SOCK_STREAM);
+    portNumBits httptunnelingport = find_available_port(thehttptunnelingport, SOCK_STREAM);
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
                                       catchinput,
@@ -190,7 +190,8 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager,
                                     serverport, udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
-                                    httptunnelingport);
+                                    httptunnelingport,
+                                    std::ref(usertask));
     if (ai_type.size() == 0 && query_type)
     {
         // start rtps server

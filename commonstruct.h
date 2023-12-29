@@ -35,6 +35,7 @@ struct UserTask
   std::string resolution;
   bool activate;
   bool threadcontroll;
+  char rtspcontroll;
   std::time_t timestampnow;
   bool videocontroll = false;
 

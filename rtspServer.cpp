@@ -14,7 +14,8 @@ void RTSPServerManager::startserver(const int serverport,
                                     portNumBits const udpport,
                                     const std::string udpip,
                                     const std::string urlname,
-                                    portNumBits const httptunnelingport)
+                                    portNumBits const httptunnelingport,
+                                    UserTask &usertask)
 {
     OutPacketBuffer::maxSize = 300000;
     auto nowserverstart = std::chrono::high_resolution_clock::now();
@@ -80,6 +81,10 @@ void RTSPServerManager::startserver(const int serverport,
     std::cout << "=======================" << std::endl;
     std::cout << "finish start server time --->>>" << endserverepoch << std::endl;
     std::cout << "+++++++++++++++++++++++" << std::endl;
-    env->taskScheduler().doEventLoop();
+    env->taskScheduler().doEventLoop(&usertask.rtspcontroll);
+
+    Medium::close(rtspServer);
+    env->reclaim();
+    delete scheduler;
     return;
 }
