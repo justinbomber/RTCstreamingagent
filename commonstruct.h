@@ -38,7 +38,7 @@ struct UserTask
   char rtspcontroll;
   std::time_t timestampnow;
   bool videocontroll = false;
-
+  std::string rtsp_url = "None";
 
   bool operator==(const UserTask &other) const
   {
@@ -53,7 +53,8 @@ struct UserTask
         && resolution == other.resolution
         && activate == other.activate
         && threadcontroll == other.threadcontroll
-        && videocontroll == other.videocontroll;
+        && videocontroll == other.videocontroll
+        && rtsp_url == other.rtsp_url;
   }
 };
 struct UserDevice
