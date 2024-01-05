@@ -184,6 +184,8 @@ int main(int argc, char *argv[])
             usertask.threadcontroll = true;
             if (json_obj.contains("rtsp_url"))
                 usertask.rtsp_url = json_obj["rtsp_url"].get<std::string>();
+            else
+                usertask.rtsp_url = "None";
         }
         catch (std::exception &e)
         {
@@ -207,21 +209,9 @@ int main(int argc, char *argv[])
                                              ipaddr,
                                              commonstruct.local_rootpath);
 
-        if (usertask.ai_type.size() > 0)
-            continue;
-        else
-        {
+        if (usertask.rtsp_url != "None")
             commonstruct.write(outputurl);
-            auto nowwrite = std::chrono::high_resolution_clock::now();
-            auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
-                                    nowwrite.time_since_epoch())
-                                    .count();
-            std::cout << "=======================" << std::endl;
-            std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
-            std::cout << "+++++++++++++++++++++++" << std::endl;
-        }
-
-        if (usertask.ai_type.size() > 0 && usertask.query_type == 0)
+        else if (usertask.ai_type.size() > 0 && usertask.query_type == 0)
         {
             boost::property_tree::ptree jsonObject;
             pqxxController pqc1;
@@ -236,6 +226,20 @@ int main(int argc, char *argv[])
             std::string inifile_text = pqc1.ptreeToJsonString(jsonObject);
             commonstruct.write(inifile_text);
         }
+        if (usertask.ai_type.size() > 0)
+            continue;
+        else
+        {
+            commonstruct.write(outputurl);
+            auto nowwrite = std::chrono::high_resolution_clock::now();
+            auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    nowwrite.time_since_epoch())
+                                    .count();
+            std::cout << "=======================" << std::endl;
+            std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
+            std::cout << "+++++++++++++++++++++++" << std::endl;
+        }
+
     }
     commonstruct.disconnect();
     return 0;
