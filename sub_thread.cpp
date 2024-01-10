@@ -171,7 +171,6 @@ void create_userfolder(std::string path, std::string partition_device, std::stri
 }
 
 std::string sub_thread::sub_thread_task(UserTask &usertask,
-                                        portNumBits udpport,
                                         std::string udpip,
                                         std::string ipaddr,
                                         std::string rootpath)
@@ -206,21 +205,21 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
     auto videostream_func = std::bind(&DDSReader::videostream_reader, &ddsreader,
                                       std::ref(usertask),
                                       catchinput,
-                                      udpport);
+                                      usertask.udpport);
 
     auto playh264_func = std::bind(&DDSReader::playh264_reader, &ddsreader,
                                    std::ref(usertask),
                                    catchoutput,
                                    catchinput,
-                                   udpport);
+                                   usertask.udpport);
     auto h2642ai_func = std::bind(&DDSReader::h2642ai_reader, &ddsreader,
                                   std::ref(usertask),
                                   catchoutput,
                                   catchinput,
-                                  udpport);
+                                  usertask.udpport);
     // auto transfunc = std::bind(&checkfile, catchoutput, std::ref(usertask));
     auto rtpsserverfunc = std::bind(&RTSPServerManager::startserver, &rtspservermanager,
-                                    serverport, udpport, udpip,
+                                    serverport, usertask.udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport, usertask);
     std::string cmdline = genCmdline(std::ref(usertask), catchoutput, 5);

@@ -42,7 +42,6 @@ public:
     ~sub_thread();
 
     std::string sub_thread_task(UserTask & usertask, 
-                                portNumBits udpport,
                                 std::string udpip,
                                 std::string ipaddr,
                                 std::string rootpath);

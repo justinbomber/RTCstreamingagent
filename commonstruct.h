@@ -39,6 +39,7 @@ struct UserTask
   std::time_t timestampnow;
   bool videocontroll = false;
   std::string rtsp_url = "None";
+  portNumBits udpport;
 
   bool operator==(const UserTask &other) const
   {

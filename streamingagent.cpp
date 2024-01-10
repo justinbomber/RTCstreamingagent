@@ -11,6 +11,7 @@
 #include <nlohmann/json.hpp>
 #include <csignal>
 #include <unistd.h>
+#include <set>
 #include "commonstruct.h"
 #include "pqxxController.hpp"
 #include <mutex>
@@ -31,9 +32,12 @@ bool globalthread = true;
 
 CommonStruct commonstruct;
 
+
 // 定義taskmanager
-void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
+portNumBits resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, UserTask> &taskmanager)
 {
+    std::set<portNumBits> udpportset;
+    portNumBits cacheudpport = commonstruct.local_udpport;
     DDSWriter ddswriter;
     std::cout << "in resort map" << std::endl;
     if (usertask.resolution == "1080")
@@ -76,7 +80,15 @@ void resortmap(UserDevice userdevice, UserTask usertask, std::map<UserDevice, Us
                                    it->second.path,
                                    0);
         }
+        if (it->second.threadcontroll == true)
+        {
+            udpportset.insert(it->second.udpport);
+        }
     }
+    // for (std::set<int>::iterator it = udpportset.begin(); it != udpportset.end(); ++it)
+    while (udpportset.count(cacheudpport))
+        cacheudpport++;
+    return cacheudpport;
 }
 
 void signalHandler(int signum)
@@ -198,13 +210,15 @@ int main(int argc, char *argv[])
             commonstruct.write(inifile_text);
         }
 
-        resortmap(userdevice, usertask, std::ref(taskmanager));
+        portNumBits udpport;
+
+        udpport = resortmap(userdevice, usertask, std::ref(taskmanager));
+        usertask.udpport = udpport;
         taskmanager[userdevice] = usertask;
 
         sub_thread instance;
         std::string outputurl;
         outputurl = instance.sub_thread_task(std::ref(taskmanager[userdevice]),
-                                             commonstruct.local_udpport,
                                              commonstruct.local_udpip,
                                              ipaddr,
                                              commonstruct.local_rootpath);
