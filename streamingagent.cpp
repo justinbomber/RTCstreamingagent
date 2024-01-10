@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
                 usertask.rtsp_url = json_obj["rtsp_url"].get<std::string>();
             else
                 usertask.rtsp_url = "None";
+            usertask.rtspcontroll = 0;
         }
         catch (std::exception &e)
         {
