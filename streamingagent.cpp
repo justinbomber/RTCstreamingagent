@@ -123,7 +123,6 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-        commonstruct.local_udpport++;
         UserDevice userdevice;
         UserTask usertask;
 
