@@ -222,7 +222,7 @@ std::string sub_thread::sub_thread_task(UserTask &usertask,
                                     serverport, usertask.udpport, udpip,
                                     usertask.partition_device + "/" + usertask.username,
                                     httptunnelingport, usertask);
-    std::string cmdline = genCmdline(std::ref(usertask), catchoutput, 5);
+    std::string cmdline = genCmdline(std::ref(usertask), catchoutput, 1);
 
     auto rtsptom3u8func = std::bind(&transferRTSPtom3u8, std::ref(usertask), cmdline);
     auto stopcmdfunc = std::bind(&stopTransferm3u8, std::ref(usertask), cmdline);
