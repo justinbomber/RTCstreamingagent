@@ -104,7 +104,7 @@ std::string genCmdline(UserTask &usertask, const std::string &outputpath, int ti
 {
     std::string cmdline = "ffmpeg -i " + usertask.rtsp_url + " -c copy -f hls" +
                           " -hls_time" + std::to_string(timewindow) + " -hls_list_size 0 -hls_flags discont_start+program_date_time" +
-                          " -hls_flags append_list -hls_segment_filename \"" + outputpath + "sample_%%d.ts'\"" +
+                          " -hls_flags append_list -hls_segment_filename " + outputpath + "\"'sample_%%d.ts'\"" +
                           " '" + outputpath + usertask.path + ".m3u8'";
     return cmdline;
 }

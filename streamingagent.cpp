@@ -139,9 +139,11 @@ int main(int argc, char *argv[])
         auto receivedwsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
                                    nowws.time_since_epoch())
                                    .count();
-        std::cout << "=======================" << std::endl;
-        std::cout << "Recieved websocket request --->>>" << receivedwsepoch << std::endl;
-        std::cout << "+++++++++++++++++++++++" << std::endl;
+        std::cout << "------------------------------------------------" << std::endl;
+        std::cout << "|                                               |" << std::endl;
+        std::cout << "| Recieved websocket request --->>" << receivedwsepoch << " |" << std::endl;
+        std::cout << "|                                               |" << std::endl;
+        std::cout << "------------------------------------------------" << std::endl;
 
         std::string received = beast::buffers_to_string(buffer.data());
         std::cout << "Received: " << received << std::endl;
@@ -249,9 +251,11 @@ int main(int argc, char *argv[])
             auto writewsepoch = std::chrono::duration_cast<std::chrono::milliseconds>(
                                     nowwrite.time_since_epoch())
                                     .count();
-            std::cout << "=======================" << std::endl;
-            std::cout << "response websocket request --->>>" << writewsepoch << std::endl;
-            std::cout << "+++++++++++++++++++++++" << std::endl;
+            std::cout << "-------------------------------------------------" << std::endl;
+            std::cout << "|                                                |" << std::endl;
+            std::cout << "|response websocket request --->>" << writewsepoch << " |" << std::endl;
+            std::cout << "|                                                |" << std::endl;
+            std::cout << "-------------------------------------------------" << std::endl;
         }
 
     }
