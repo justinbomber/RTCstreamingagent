@@ -311,7 +311,7 @@ void DDSReader::videostream_reader(UserTask &usertask,
             }
         }
     }
-    if (usertask.resolution == "480"){
+    if (usertask.resolution == "480" && commonstruct.websocketpath == "ddsagent480"){
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         json_obj["partition_device"] = usertask.partition_device;
         json_obj["type"] = "disconnected";
